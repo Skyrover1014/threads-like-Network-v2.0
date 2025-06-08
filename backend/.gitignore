@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
+# Poetry
+# 保留 poetry.lock，確保依賴一致性
+# poetry.lock
+
+# pyenv
+.python-version
+
+# IDE
+.vscode/
+.idea/
+
+# dotenv
+.env*
+.env.*  # 支援 .env.development、.env.production
+
+# Test/coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Django
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+
+# macOS
+.DS_Store

@@ -1,0 +1,86 @@
+# domain/entity/user.py
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import List, Optional
+from abc import ABC, abstractmethod
+import re
+
+
+
+@dataclass
+class User:
+    id: int   
+    username: str
+    email: str
+    hashed_password: str = field(repr=False)
+    # created_at: datetime = field(default_factory=datetime.now)
+    # updated_at: datetime = field(default_factory=datetime.now)
+
+    def __post_init__(self):
+        self.validate_username()
+        self.validate_email()
+    def validate_email(self):
+        email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_pattern, self.email):
+            raise ValueError("無效的電子郵件地址")
+    def validate_username(self):
+        if len(self.username) < 3:
+            raise ValueError("使用者名稱必須至少3個字元")
+        if len(self.username) > 50:
+            raise ValueError("使用者名稱不能超過50個字元")
+        if not self.username.isalnum():
+            raise ValueError("使用者名稱只能包含字母和數字")
+
+
+@dataclass
+class Follow:
+    id:int
+    follower_id:int
+    following_id:int
+    # created_at:datetime = field(default_factory=datetime.now)
+
+    def __post_init__(self):
+        self.validate_follow()
+
+    def validate_follow(self):
+        if self.following_id == self.follower_id:
+            raise ValueError("不能關注自己")
+
+@dataclass
+class Like:
+    id:int
+    user_id:int
+    content_item_id:int
+    # created_at:datetime = field(default_factory=datetime.now)
+
+@dataclass
+class ContentItem(ABC):
+    id:int
+    author_id:int
+    content:str
+    created_at:datetime = field(default_factory= datetime.now)
+    updated_at:datetime = field(default_factory= datetime.now)
+
+    #具備轉發貼文的性質
+    is_repost:bool = field(default=False) #ContentItem是否為轉發
+    repost_of:Optional[int] = field(default=None) #ContentItem轉發的原始ContentItemID
+
+    def __post_init__(self):
+        self.validate_content()
+
+    def validate_content(self):
+        if len(self.content) < 1:
+            raise ValueError("內容不能為空")
+        if len(self.content) > 255:
+            raise ValueError("內容不能超過255個字元")
+
+
+@dataclass
+class Post(ContentItem):
+    pass
+
+@dataclass (kw_only=True)
+class Comment(ContentItem):
+    parent_post_id:int
+    parent_comment_id:Optional[int] = field(default=None) 
+

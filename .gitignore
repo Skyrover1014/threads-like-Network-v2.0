@@ -1,0 +1,27 @@
+# 根目錄 .gitignore
+# 忽略作業系統與編輯器產生的檔案
+.DS_Store
+Thumbs.db
+
+# 忽略 VSCode 設定（但允許 extensions.json）
+.vscode/
+!.vscode/extensions.json
+.idea/
+
+# 忽略 Python、Node、前後端 build 產物（如有）
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+node_modules/
+dist/
+build/
+
+# 忽略 dotenv
+.env*
+
+# 忽略 log
+*.log
+
+# 其他
+*.bak
