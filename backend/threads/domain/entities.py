@@ -61,19 +61,35 @@ class ContentItem(ABC):
     created_at:datetime = field(default_factory= datetime.now)
     updated_at:datetime = field(default_factory= datetime.now)
 
+    #快取欄位非核心欄位，不會影響資料庫，真正資料來自Like等表
+    likes_count:int = field(default=0)
+    comments_count:int = field(default=0)
+    reposts_count:int = field(default=0)
+
     #具備轉發貼文的性質
     is_repost:bool = field(default=False) #ContentItem是否為轉發
     repost_of:Optional[int] = field(default=None) #ContentItem轉發的原始ContentItemID
 
     def __post_init__(self):
         self.validate_content()
+        self.validate_likes_count()
+        self.validate_comments_count()
+        self.validate_reposts_count()
 
     def validate_content(self):
         if len(self.content) < 1:
             raise ValueError("內容不能為空")
         if len(self.content) > 255:
             raise ValueError("內容不能超過255個字元")
-
+    def validate_likes_count(self):
+        if self.likes_count < 0:
+            raise ValueError("喜歡數不能為負數")
+    def validate_comments_count(self):
+        if self.comments_count < 0:
+            raise ValueError("評論數不能為負數")
+    def validate_reposts_count(self):   
+        if self.reposts_count < 0:
+            raise ValueError("轉發數不能為負數")
 
 @dataclass
 class Post(ContentItem):
