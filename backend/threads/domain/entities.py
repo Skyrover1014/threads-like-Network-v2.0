@@ -1,7 +1,7 @@
 # domain/entity/user.py
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Literal
 from abc import ABC, abstractmethod
 import re
 
@@ -51,6 +51,7 @@ class Like:
     id:int
     user_id:int
     content_item_id:int
+    content_type:Literal['post', 'comment']
     # created_at:datetime = field(default_factory=datetime.now)
 
 @dataclass
@@ -58,23 +59,31 @@ class ContentItem(ABC):
     id:int
     author_id:int
     content:str
-    created_at:datetime = field(default_factory= datetime.now)
-    updated_at:datetime = field(default_factory= datetime.now)
+    created_at:Optional[datetime] = None
+    updated_at:Optional[datetime] = None
 
     #快取欄位非核心欄位，不會影響資料庫，真正資料來自Like等表
     likes_count:int = field(default=0)
     comments_count:int = field(default=0)
     reposts_count:int = field(default=0)
 
+    is_like:bool = field(default=False)
+
     #具備轉發貼文的性質
     is_repost:bool = field(default=False) #ContentItem是否為轉發
     repost_of:Optional[int] = field(default=None) #ContentItem轉發的原始ContentItemID
+    repost_of_content_type:Optional[Literal['post','comment']] = None
 
     def __post_init__(self):
         self.validate_content()
         self.validate_likes_count()
         self.validate_comments_count()
         self.validate_reposts_count()
+        now = datetime.now()
+        if self.created_at is None:
+            self.created_at = now
+        if self.updated_at is None:
+            self.updated_at = self.created_at
 
     def validate_content(self):
         if len(self.content) < 1:
@@ -91,6 +100,16 @@ class ContentItem(ABC):
         if self.reposts_count < 0:
             raise ValueError("轉發數不能為負數")
 
+    def update_content(self, new_content, editor_id):
+        if self.author_id != editor_id:
+            raise PermissionError("無權限修改貼文")
+        self.content = new_content
+        self.updated_at = datetime.now()
+    
+    def verify_deletable_by(self, deleter):
+        if self.author_id != deleter:
+           raise PermissionError("無權限刪除貼文")
+         
 @dataclass
 class Post(ContentItem):
     pass

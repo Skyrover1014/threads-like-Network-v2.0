@@ -13,18 +13,27 @@ class User(AbstractUser):
     
     followers_count = models.PositiveIntegerField(default=0)
     followings_count = models.PositiveIntegerField(default=0)
-    posts_count = models.PositiveIntegerField(default=0)
+    posts_count = models.PositiveIntegerField(default=0) 
 
-    is_repost = models.BooleanField(default=False)
- 
-
-    
     def __str__(self):
         return self.username
     
     class Meta:
         db_table = 'app_user'
         ordering = ['-created_at']
+
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followings')
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'app_follow'
+        ordering = ['-created_at']
+        unique_together = ('follower', 'following')
+        indexes = [
+            models.Index(fields=['follower', 'following']),
+        ]
 
 
 
@@ -46,6 +55,7 @@ class ContentItem(models.Model):
         db_table = 'app_content_item'
         ordering = ['-created_at']
 
+
 CONTENT_TYPE_LIMIT = (
     Q(app_label='threads', model='post') |
     Q(app_label='threads', model='comment')
@@ -56,9 +66,12 @@ class Post(ContentItem):
     repost_of_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to=CONTENT_TYPE_LIMIT)
     repost_of_content_item_id = models.PositiveIntegerField(null=True, blank=True)
     repost_of_content_object = GenericForeignKey('repost_of_content_type', 'repost_of_content_item_id')
-
-    
-
+    class Meta:
+        db_table = 'app_post'
+        ordering = ['-created_at']
+        indexes =[
+            models.Index(fields=['repost_of_content_type','repost_of_content_item_id'])
+        ]
 class Comment(ContentItem):
     repost_of_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to=CONTENT_TYPE_LIMIT)
     repost_of_content_item_id = models.PositiveIntegerField(null=True, blank=True)
@@ -70,6 +83,9 @@ class Comment(ContentItem):
     class Meta:
         db_table = 'app_comment'
         ordering = ['-created_at']
+        indexes =[
+            models.Index(fields=['repost_of_content_type','repost_of_content_item_id'])
+        ]
 
 
 

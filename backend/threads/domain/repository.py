@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from .entities import User as DomainUser
 from .entities import Follow as DomainFollow
-from .entities import ContentItem as DomainContentItem
 from .entities import Post as DomainPost
 from .entities import Comment as DomainComment
 from .entities import Like as DomainLike
@@ -61,48 +60,67 @@ class FollowRepository(ABC):
     def is_following(self, follower_id:int, following_id:int) -> bool:
         pass
 
-class ContentItemRepository(ABC):
+class PostRepository(ABC):
     @abstractmethod
-    def create_content_item(self, content_item: DomainContentItem) -> DomainContentItem:
+    def create_post(self, post: DomainPost) -> DomainPost:
         pass
 
     @abstractmethod
-    def get_content_item_by_id(self, content_item_id:int) -> Optional[DomainContentItem]:
+    def get_post_by_id(self, post_id:int) -> Optional[DomainPost]:
         pass
 
     @abstractmethod
-    def update_content_item(self, content_item: DomainContentItem) -> DomainContentItem:
+    def update_post(self, post: DomainPost) -> DomainPost:
         pass
 
     @abstractmethod
-    def delete_content_item(self, content_item_id:int) -> None:
+    def delete_post(self, user_id:int ,post_id:int) -> None:
         pass
 
     @abstractmethod
-    def get_likes_by_content_item_id(self, content_item_id:int, offset:int, limit:int) -> List[DomainLike]:
+    def get_comments_by_post_id(self,auth_user_id:int, post_id:int, offset:int, limit:int) -> List[DomainComment]:
         pass
 
     @abstractmethod
-    def get_comments_by_content_item_id(self, content_item_id:int, offset:int, limit:int) -> List[DomainComment]:
+    def get_all_posts(self,auth_user_id:int, offset:int,limit:int) -> List[DomainPost]:
         pass
     
-    @abstractmethod #取得作者的所有貼文 -> 支援profile頁面貼文和following頁面貼文
-    def get_content_items_by_author_id(self, author_id:int, offset:int, limit:int) -> List[DomainContentItem]:
-        pass
-
-    @abstractmethod
-    def get_comments_count_by_content_item_id(self, content_item_id:int) -> int:
+    @abstractmethod #取得作者的所有貼文 -> 支援profile頁面貼文
+    def get_posts_by_author_id(self,auth_user_id:int, author_id:int, offset:int, limit:int) -> List[DomainPost]:
         pass
     
-    @abstractmethod
-    def get_likes_count_by_content_item_id(self, content_item_id:int) -> int:
+    @abstractmethod #取得所有followings的貼文 -> 支援following頁面貼文
+    def get_posts_by_following_ids(self,auth_user_id:int, following_ids:List[int], offset:int, limit:int) -> List[DomainPost]:
         pass
     
     @abstractmethod
-    def get_reposts_count_by_content_item_id(self, content_item_id:int) -> int:
+    def repost_post(self, post:DomainPost) -> DomainPost:
         pass
 
+class CommentRepository(ABC):
+    @abstractmethod
+    def get_comment_by_id(self, comment_id:int) -> Optional[DomainUser]:
+        pass
     
+    @abstractmethod
+    def create_comment(self, comment:DomainComment) -> DomainComment:
+        pass
+    
+    @abstractmethod
+    def update_comment(self, user_id:int, comment:DomainComment) -> DomainComment:
+        pass
+    @abstractmethod
+    def delete_comment(self, user_id:int, comment_id:int) -> None:
+        pass
+    @abstractmethod
+    def get_all_child_comments_by_comment_id(self,auth_user_id:int, comment_id:int, offset:int, limit:int) -> List[DomainComment]:
+        pass
+    @abstractmethod
+    def repost_comment(self, comment:DomainComment)-> DomainComment:
+        pass
+
+
+
 class LikeRepository(ABC):
     @abstractmethod
     def create_like(self, user_id:int, content_item_id:int) -> DomainLike:
