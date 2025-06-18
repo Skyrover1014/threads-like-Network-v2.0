@@ -9,6 +9,9 @@ from threads.repositories import UserRepositoryImpl, PostRepositoryImpl
 from threads.use_cases.commands.register_user import RegisterUser
 from threads.use_cases.queries.get_user_profile import GetUserProfile
 from threads.use_cases.queries.get_all_posts import GetAllPost
+from threads.use_cases.queries.get_profile_posts import GetProfilePost
+from threads.use_cases.queries.get_following_user_ids import GetFollowingUserIds
+from threads.use_cases.queries.get_followings_posts import GetFollowingsPost
 from threads.use_cases.commands.create_post import CreatePost
 from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.use_cases.commands.update_post import UpdatePost
@@ -55,18 +58,47 @@ class GetUserProfileView(APIView):
         serializers = UserSerializer(domain_user)
         return Response(serializers.data, status=status.HTTP_200_OK)
     
+class PostListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
 
-class GetAllPostView(APIView):
-    permission_classes = [AllowAny]
+    def get(self, request):
+        auth_user_id = request.query_params.get("auth_user_id")
+        author_id = request.query_params.get("author_id")
+        following = request.query_params.get("following") == "true"
+        offset = int(request.query_params.get("offset", 0))
+        limit = int(request.query_params.get("limit", 10))
+        
+        repo = PostRepositoryImpl()
 
-    def get(self, request, auth_user_id, offset, limit):
-        domain_posts = GetAllPost(PostRepositoryImpl()).execute(auth_user_id, offset, limit)
+        if author_id:
+            try:
+                domain_posts = GetProfilePost(repo).execute(auth_user_id, author_id, offset, limit)
+            except EntityDoesNotExist as e:
+                return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
+            except EntityOperationFailed as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        elif following:
+            try:
+                following_ids = GetFollowingUserIds(UserRepositoryImpl()).execute(auth_user_id)
+            except EntityDoesNotExist as e:
+                return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
+            except EntityOperationFailed as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            try:
+                domain_posts = GetFollowingsPost(repo).execute(auth_user_id, following_ids, offset, limit)
+            except EntityDoesNotExist as e:
+                return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
+            except EntityOperationFailed as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            try:
+                domain_posts = GetAllPost(repo).execute(auth_user_id, offset, limit)
+            except EntityOperationFailed as e:
+                return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+         
         serializers = PostSerializer(domain_posts, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
     
-class CreateNewPostView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request):
         serializers = CreatePostSerializer(data=request.data)
         serializers.is_valid(raise_exception=True)
@@ -74,10 +106,8 @@ class CreateNewPostView(APIView):
         author_id = serializers.validated_data["author_id"]
         content = serializers.validated_data["content"]
 
-        create_post = CreatePost(PostRepositoryImpl())
-
         try:
-            post = create_post.execute(author_id,content)
+            post = CreatePost(PostRepositoryImpl()).execute(author_id,content)
         except ValueError as e:
             return Response({'error':str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except EntityOperationFailed as e:
@@ -88,29 +118,61 @@ class CreateNewPostView(APIView):
         return Response({"message": "Post created successfully"}, status=status.HTTP_200_OK)
 
 
-class EditPostView(APIView):
+
+
+class PostDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, post_id):
-        old_domain_post = GetPostById(PostRepositoryImpl()).execute(post_id)
-        serializers = PostSerializer(old_domain_post, data=request.data, partial = True)
-        serializers.is_valid(raise_exception=True)
-
-        data = serializers.validated_data
-        old_domain_post.update_content(data.get("content",old_domain_post.content), request.user.id)
-        updated = UpdatePost(PostRepositoryImpl()).execute(old_domain_post)
-        return Response(PostSerializer(updated).data, status=status.HTTP_200_OK)
-
-
-class DeletePostView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, post_id):
-        target_domain_post = GetPostById(PostRepositoryImpl()).execute(post_id)
-        target_domain_post.verify_deletable_by(request.user.id)
-
-        DeletePost(PostRepositoryImpl()).execute(target_domain_post)
-
-        return Response({"message":"Post deleted successfully"},status=status.HTTP_204_NO_CONTENT)
+    def get(self, request, post_id):
+        try:
+            domain_post =  GetPostById(PostRepositoryImpl()).execute(post_id)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except EntityOperationFailed as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         
+        
+        serializers = PostSerializer(domain_post)
+        return Response(serializers.data, status=status.HTTP_200_OK)
+    
+    def patch(self, request, post_id):
+        try:
+            old_domain_post = GetPostById(PostRepositoryImpl()).execute(post_id)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND) 
+        except EntityOperationFailed as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializers = PostSerializer(old_domain_post, data=request.data, partial = True)
+        serializers.is_valid(raise_exception=True)
+        data = serializers.validated_data
+
+        try:
+            old_domain_post.update_content(data.get("content",old_domain_post.content), request.user.id)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        
+        updated = UpdatePost(PostRepositoryImpl()).execute(old_domain_post)
+        return Response(PostSerializer(updated).data, status=status.HTTP_200_OK)
+    
+    def delete(self, request, post_id):
+        try:
+            target_domain_post = GetPostById(PostRepositoryImpl()).execute(post_id)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND) 
+        except EntityOperationFailed as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 
+        try: 
+            target_domain_post.verify_deletable_by(request.user.id)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+        DeletePost(PostRepositoryImpl()).execute(target_domain_post)
+        return Response({"message":"Post deleted successfully"},status=status.HTTP_204_NO_CONTENT)

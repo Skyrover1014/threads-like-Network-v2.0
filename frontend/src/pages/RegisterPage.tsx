@@ -13,7 +13,7 @@ const RegisterPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            const response = await api.post("/threads/register/", { username, email, password, confirmation });
+            const response = await api.post("/threads/users/", { username, email, password, confirmation });
             if (response.status === 201) {
                 navigate("/");
             }

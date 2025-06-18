@@ -1,12 +1,10 @@
 from django.urls import path
 from .interface.views import RegisterUserView, GetUserProfileView
-from .interface.views import GetAllPostView, CreateNewPostView, EditPostView, DeletePostView
+from .interface.views import PostListCreateView, PostDetailView
 
 urlpatterns = [
-    path('register/', RegisterUserView.as_view(), name='register'),
-    path('profile/<int:user_id>/', GetUserProfileView.as_view(), name='profile'),
-    path('posts/<int:auth_user_id>/<int:offset>/<int:limit>', GetAllPostView.as_view(), name='all_posts'),
-    path('new_post/', CreateNewPostView.as_view(), name='create_post'),
-    path('post/<int:post_id>', EditPostView.as_view(),name="edit_post"),
-    path('post/delete/<int:post_id>', DeletePostView.as_view(), name="delete_post")
+    path('users/', RegisterUserView.as_view(), name='user_register'),
+    path('users/<int:user_id>/', GetUserProfileView.as_view(), name='user_profile'),
+    path('posts/', PostListCreateView.as_view(), name="posts_list_create"),
+    path('posts/<int:post_id>', PostDetailView.as_view(), name="post_edit_delete_repost")
 ]

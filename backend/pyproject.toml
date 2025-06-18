@@ -17,6 +17,11 @@ dependencies = [
     "djangorestframework-simplejwt"
 ]
 
+[tool.poetry]
+packages = [
+  { include = "core" },
+  { include = "threads" }
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

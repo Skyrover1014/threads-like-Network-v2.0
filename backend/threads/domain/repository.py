@@ -37,6 +37,10 @@ class UserRepository(ABC):
     @abstractmethod
     def get_posts_count_by_user_id(self, user_id:int) -> int:
         pass
+
+    @abstractmethod
+    def get_following_user_ids(self, user_id:int) -> List[int]:
+        pass
     
 
 class FollowRepository(ABC):

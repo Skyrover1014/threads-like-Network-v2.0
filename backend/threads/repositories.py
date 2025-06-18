@@ -150,6 +150,18 @@ class UserRepositoryImpl(UserRepository):
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
 
+    def get_following_user_ids(self, user_id: int) -> List[int]:
+        try:
+            db_user = DatabaseUser.objects.get(id=user_id)
+        except DatabaseUser.DoesNotExist:
+            raise EntityDoesNotExist("使用者不存在")
+        except DatabaseError :
+            raise EntityOperationFailed("資料庫操作失敗")
+        followings = db_user.followings.all()
+        following_ids = followings.values_list("following_id", flat=True)
+        return list(following_ids)
+
+
     def _decode_orm_user(self, db_user: DatabaseUser) -> DomainUser:
         return DomainUser(
             id=db_user.id,
@@ -191,8 +203,7 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
         db_post.save()
         return self._decode_orm_post(db_post)
     
-    def delete_post(self,user_id:int, post_id:int) -> None:
-
+    def delete_post(self, post: DomainPost) -> None:
         try:
             db_post = DatabasePost.objects.get(id=post.id)
         except DatabasePost.DoesNotExist:
@@ -236,7 +247,7 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
             raise EntityDoesNotExist("使用者不存在")
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
-        return [BaseRepository._decode_orm_post(db_post) for db_post in db_posts]
+        return [self._decode_orm_post(db_post) for db_post in db_posts]
     
     # 組裝追蹤對象們的貼文列表
     def get_posts_by_following_ids(self, auth_user_id:int,following_ids:List[int],offset:int,limit:int) -> List[DomainPost]:
@@ -251,7 +262,7 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
             raise EntityDoesNotExist("使用者不存在")
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
-        return [BaseRepository._decode_orm_post(db_post) for db_post in db_posts]
+        return [self._decode_orm_post(db_post) for db_post in db_posts]
     
 
     #轉發貼文
@@ -303,7 +314,7 @@ class CommentRepositoryImpl(CommentRepository):
             raise EntityOperationFailed("資料庫操作失敗")
         return BaseRepository._decode_orm_comment(db_comment)
 
-    def  update_comment(self, user_id: int, comment: DomainComment) -> DomainComment:
+    def update_comment(self, user_id: int, comment: DomainComment) -> DomainComment:
         try:
             db_comment = DatabaseComment.objects.get(id = comment.id)
             if db_comment.author_id == user_id:
