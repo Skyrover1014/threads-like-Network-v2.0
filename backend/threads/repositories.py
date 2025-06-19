@@ -42,7 +42,7 @@ class BaseRepository:
     def _decode_orm_comment(self, db_comment:DatabaseComment) -> DomainComment:
         return DomainComment(
             id=db_comment.id,
-            author=db_comment.author_id,
+            author_id=db_comment.author_id,
             content=db_comment.content,
             created_at=db_comment.created_at,
             updated_at=db_comment.updated_at,
@@ -52,8 +52,8 @@ class BaseRepository:
             is_repost=db_comment.is_repost,
             repost_of=db_comment.repost_of_content_item_id,
             repost_of_content_type=db_comment.repost_of_content_type,
-            parent_post=db_comment.parent_post.id,
-            parent_comment=db_comment.parent_comment.id if db_comment.parent_comment else None,
+            parent_post_id=db_comment.parent_post.id,
+            parent_comment_id=db_comment.parent_comment.id if db_comment.parent_comment else None,
         )
     
     @staticmethod
@@ -219,7 +219,7 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
                 comment=OuterRef('pk')
             ))
         ).order_by('created_at')[offset:offset+limit]
-        return [BaseRepository._decode_orm_comment(db_comment) for db_comment in db_comments]
+        return [self._decode_orm_comment(db_comment) for db_comment in db_comments]
 
     #組裝Home-Page貼文列表
     def get_all_posts(self,auth_user_id:int ,offset:int ,limit:int) -> List[DomainPost]:
@@ -274,7 +274,7 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
         
         try:
             db_post = DatabasePost.objects.create(
-                author=post.author_id,
+                author_id=post.author_id,
                 content=post.content,
                 is_repost= post.is_repost,
                 repost_of_content_type= repost_of_content_type,
@@ -284,9 +284,9 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
             raise EntityDoesNotExist("轉發的貼文不存在")
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
-        return BaseRepository._decode_orm_post(db_post)
+        return self._decode_orm_post(db_post)
 
-class CommentRepositoryImpl(CommentRepository):
+class CommentRepositoryImpl(CommentRepository, BaseRepository):
     def get_comment_by_id(self, comment_id: int) -> Optional[DomainComment]:
         try:
             db_comment = DatabaseComment.objects.get(id = comment_id)
@@ -294,7 +294,7 @@ class CommentRepositoryImpl(CommentRepository):
             raise EntityDoesNotExist("留言不存在")
         except DatabaseError:
             raise EntityOperationFailed("資料庫操作失敗")
-        return BaseRepository._decode_orm_comment(db_comment)
+        return self._decode_orm_comment(db_comment)
     
     def create_comment(self, comment: DomainComment) -> DomainComment:
         try:
@@ -341,7 +341,7 @@ class CommentRepositoryImpl(CommentRepository):
             raise EntityOperationFailed("資料庫操作失敗")
         return None
     
-    def get_all_child_comments(self, auth_user_id:int, comment:DomainComment, offset:int, limit:int) -> List[DomainComment]:
+    def get_all_child_comments_by_comment_id(self, auth_user_id:int, comment:DomainComment, offset:int, limit:int) -> List[DomainComment]:
         try:
             db_comments = DatabaseComment.objects.filter(parent_comment = comment).annotate(
                 is_like = Exists(DatabaseLikeComment.objects.filter(

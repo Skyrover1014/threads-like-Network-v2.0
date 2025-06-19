@@ -5,7 +5,8 @@ from rest_framework import status
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from threads.repositories import UserRepositoryImpl, PostRepositoryImpl
+from threads.repositories import UserRepositoryImpl, PostRepositoryImpl, CommentRepositoryImpl
+
 from threads.use_cases.commands.register_user import RegisterUser
 from threads.use_cases.queries.get_user_profile import GetUserProfile
 from threads.use_cases.queries.get_all_posts import GetAllPost
@@ -16,9 +17,10 @@ from threads.use_cases.commands.create_post import CreatePost
 from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.use_cases.commands.update_post import UpdatePost
 from threads.use_cases.commands.delete_post import DeletePost
+from threads.use_cases.commands.repost_post import CreateRePost
 
 
-from .serializers import UserSerializer, RegisterUserSerializer, PostSerializer, CreatePostSerializer
+from .serializers import UserSerializer, RegisterUserSerializer, PostSerializer, CreatePostSerializer, CommentSerializer, RepostSerializer
 from threads.common.exceptions import EntityAlreadyExists, EntityOperationFailed, EntityDoesNotExist
 
 
@@ -57,7 +59,7 @@ class GetUserProfileView(APIView):
         domain_user = GetUserProfile(UserRepositoryImpl()).execute(user_id)
         serializers = UserSerializer(domain_user)
         return Response(serializers.data, status=status.HTTP_200_OK)
-    
+   
 class PostListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -114,11 +116,9 @@ class PostListCreateView(APIView):
             return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except EntityDoesNotExist as e:
             return Response({'error':str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        
         print(post)
         return Response({"message": "Post created successfully"}, status=status.HTTP_200_OK)
-
-
-
 
 class PostDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -176,3 +176,47 @@ class PostDetailView(APIView):
 
         DeletePost(PostRepositoryImpl()).execute(target_domain_post)
         return Response({"message":"Post deleted successfully"},status=status.HTTP_204_NO_CONTENT)
+
+
+class RepostView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
+    def post(self, request, post_id):
+        serializers = RepostSerializer(data=request.data)
+        serializers.is_valid(raise_exception=True)
+       
+        author_id = serializers.validated_data["author_id"]
+        content = serializers.validated_data["content"]
+        is_repost = serializers.validated_data["is_repost"]
+        repost_of = post_id
+        repost_of_content_type = serializers.validated_data["repost_of_content_type"]
+
+        try:
+            re_post = CreateRePost(PostRepositoryImpl(), CommentRepositoryImpl()).execute(author_id,content,is_repost,repost_of, repost_of_content_type)
+        except ValueError as e:
+            return Response({'error':str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except EntityOperationFailed as e:
+            return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        print(re_post)
+
+        post =  PostSerializer(re_post.repost).data
+        if repost_of_content_type == "post":
+            original = PostSerializer(re_post.original).data
+            response_data = {
+                "message": "Post created successfully",
+                "post": post,
+                "original_post": original,
+            } 
+        elif repost_of_content_type == "comment":
+            original = CommentSerializer(re_post.original).data
+            response_data = {
+                "message": "Post created successfully",
+                "post": post,
+                "original_comment": original,
+            }
+        else:
+            return Response({"error": "Unknown content type."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(response_data, status=status.HTTP_201_CREATED)
