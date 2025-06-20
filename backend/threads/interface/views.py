@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from threads.repositories import UserRepositoryImpl, PostRepositoryImpl, CommentRepositoryImpl
+from threads.repositories import UserRepositoryImpl, PostRepositoryImpl, CommentRepositoryImpl, LikeRepositoryImpl
 
 from threads.use_cases.commands.register_user import RegisterUser
 from threads.use_cases.queries.get_user_profile import GetUserProfile
@@ -18,11 +18,14 @@ from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.use_cases.commands.update_post import UpdatePost
 from threads.use_cases.commands.delete_post import DeletePost
 from threads.use_cases.commands.repost_post import CreateRePost
+from threads.use_cases.commands.create_like import CreateLike
+from threads.use_cases.commands.delete_like import DeleteLike
+from threads.use_cases.queries.get_like_by_id import GetLikeById
 
 
-from .serializers import UserSerializer, RegisterUserSerializer, PostSerializer, CreatePostSerializer, CommentSerializer, RepostSerializer
+from .serializers import UserSerializer, RegisterUserSerializer, PostSerializer, CreatePostSerializer, CommentSerializer, RepostSerializer, LikeSerializer
 from threads.common.exceptions import EntityAlreadyExists, EntityOperationFailed, EntityDoesNotExist
-
+from django.db import IntegrityError
 
 
 
@@ -220,3 +223,72 @@ class RepostView(APIView):
         else:
             return Response({"error": "Unknown content type."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+
+class LikeContentView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get (self, request, content_id,content_type):
+
+        user_id = request.user.id
+        try:
+            domain_like = GetLikeById(LikeRepositoryImpl()).execute(user_id, content_id, content_type)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except EntityOperationFailed as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        serializers = LikeSerializer(domain_like)
+        return Response(serializers.data, status=status.HTTP_200_OK)
+        
+
+    def post(self, request, content_id, content_type):
+       
+        data = {
+            'user_id': request.user.id,
+            'content_item_id': content_id,
+            'content_type': content_type
+        }
+
+        serializers = LikeSerializer(data=data)
+        serializers.is_valid(raise_exception=True)
+
+        user_id = serializers.validated_data['user_id']
+        content_id = serializers.validated_data['content_item_id']
+        content_type = serializers.validated_data['content_type']
+
+        try:
+            like = CreateLike(LikeRepositoryImpl()).execute(user_id, content_id, content_type)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND) 
+        except EntityOperationFailed as e:
+            return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except EntityAlreadyExists as e:
+            return Response({'error':str(e)}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response({"message": "Liked Successfully"}, status=status.HTTP_201_CREATED)
+    
+    def delete (self, request, content_id, content_type):
+
+        user_id = request.user.id
+        try:
+            domain_like = GetLikeById(LikeRepositoryImpl()).execute(user_id, content_id, content_type)
+        except EntityDoesNotExist as e:
+            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except EntityOperationFailed as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        try: 
+            domain_like.verify_deletable_by(request.user.id)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            delete_lke = DeleteLike(LikeRepositoryImpl()).execute(domain_like)
+        except EntityDoesNotExist as e:
+           return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except EntityOperationFailed as e:
+            return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message":"Like deleted successfully"},status=status.HTTP_204_NO_CONTENT)
+ 
+         
+        

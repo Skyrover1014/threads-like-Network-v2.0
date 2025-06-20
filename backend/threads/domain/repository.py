@@ -1,6 +1,6 @@
 # domain/repository.py
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Literal
 from .entities import User as DomainUser
 from .entities import Follow as DomainFollow
 from .entities import Post as DomainPost
@@ -127,9 +127,13 @@ class CommentRepository(ABC):
 
 class LikeRepository(ABC):
     @abstractmethod
-    def create_like(self, user_id:int, content_item_id:int) -> DomainLike:
+    def create_like(self, like:DomainLike) -> DomainLike:
         pass
     
     @abstractmethod
-    def delete_like(self, user_id:int, content_item_id:int) -> None:
+    def delete_like(self, like:DomainLike) -> None:
+        pass
+
+    @abstractmethod
+    def get_like_by_id(self, user_id:int, content_id:int,  content_type: Literal['post','comment'] ) -> Optional[DomainLike]:
         pass

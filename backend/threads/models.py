@@ -97,6 +97,7 @@ class LikePost(models.Model):
     class Meta:
         db_table = 'app_like'
         ordering = ['-created_at']
+        unique_together = ('user', 'post') 
 
 class LikeComment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes_comments')
@@ -106,4 +107,5 @@ class LikeComment(models.Model):
     class Meta:
         db_table = 'app_like_comment'
         ordering = ['-created_at']
+        unique_together = ('user', 'comment') 
          

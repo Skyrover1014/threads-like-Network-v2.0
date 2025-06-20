@@ -52,8 +52,10 @@ class Like:
     user_id:int
     content_item_id:int
     content_type:Literal['post', 'comment']
-    # created_at:datetime = field(default_factory=datetime.now)
 
+    def verify_deletable_by(self, deleter):
+        if self.user_id != deleter:
+           raise PermissionError("無權限刪除貼文")
 @dataclass
 class ContentItem(ABC):
     id:int
