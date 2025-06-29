@@ -69,7 +69,7 @@ class ContentItem(ABC):
     comments_count:int = field(default=0)
     reposts_count:int = field(default=0)
 
-    is_like:bool = field(default=False)
+    is_liked:bool = field(default=False)
 
     #具備轉發貼文的性質
     is_repost:bool = field(default=False) #ContentItem是否為轉發

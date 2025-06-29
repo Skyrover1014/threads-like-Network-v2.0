@@ -70,7 +70,7 @@ class PostRepository(ABC):
         pass
 
     @abstractmethod
-    def get_post_by_id(self, post_id:int) -> Optional[DomainPost]:
+    def get_post_by_id(self, post_id:int, auth_user_id: int) -> Optional[DomainPost]:
         pass
 
     @abstractmethod
