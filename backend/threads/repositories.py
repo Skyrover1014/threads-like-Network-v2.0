@@ -70,6 +70,19 @@ class BaseRepository:
             raise ValueError("不支援的ContentType")
         return ContentType.objects.get_for_model(model)
 
+    def adjust_reposts_count(self, repost_of: int, repost_of_content_type:str, delta:int):
+        databases = {
+            "post": DatabasePost,
+            "comment": DatabaseComment
+        }
+        
+        model = databases.get(repost_of_content_type)
+        if model is None:
+            raise EntityOperationFailed("不支援的轉發來源類型")
+    
+        model.objects.filter(id=repost_of).update(
+            reposts_count = F("reposts_count") + delta
+        )
 
 class UserRepositoryImpl(UserRepository):
     def create_user(self, user: DomainUser) -> DomainUser:
@@ -214,9 +227,10 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
         
         with transaction.atomic():
             if post.is_repost == True:
-                original_post = DatabasePost.objects.filter(id=post.repost_of).update(
-                    reposts_count = F("reposts_count") - 1
-                )
+                # original_post = DatabasePost.objects.filter(id=post.repost_of).update(
+                #     reposts_count = F("reposts_count") - 1
+                # )
+                self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= -1)
             try:
                 db_post = DatabasePost.objects.get(id=post.id)
             except DatabasePost.DoesNotExist:
@@ -294,9 +308,10 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
                     repost_of_content_type= repost_of_content_type,
                     repost_of_content_item_id= post.repost_of
                 )
-                db_original_post = DatabasePost.objects.filter(id=post.repost_of).update(
-                    reposts_count= F('reposts_count') + 1
-                )
+                # db_original_post = DatabasePost.objects.filter(id=post.repost_of).update(
+                #     reposts_count= F('reposts_count') + 1
+                # )
+                self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= 1)
             except DatabasePost.DoesNotExist:
                 raise EntityDoesNotExist("轉發的貼文不存在")
             except DatabaseError :
@@ -349,13 +364,16 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
         return self._decode_orm_comment(db_comment)
     
     def delete_comment(self, comment: DomainComment) -> None:    
-        try:
-            db_comment = DatabaseComment.objects.get(id = comment.id)
-            db_comment.delete()
-        except DatabaseComment.DoesNotExist:
-            raise EntityDoesNotExist("留言不存在")
-        except DatabaseError:
-            raise EntityOperationFailed("資料庫操作失敗")
+        with transaction.atomic():
+            if comment.is_repost == True:
+                self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta= -1)
+            try:
+                db_comment = DatabaseComment.objects.get(id = comment.id)
+                db_comment.delete()
+            except DatabaseComment.DoesNotExist:
+                raise EntityDoesNotExist("留言不存在")
+            except DatabaseError:
+                raise EntityOperationFailed("資料庫操作失敗")
         return None
     
     def get_all_child_comments_by_comment_id(self, auth_user_id:int, comment:DomainComment, offset:int, limit:int) -> List[DomainComment]:
@@ -381,20 +399,23 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
         except ValueError as e:
             raise EntityOperationFailed("轉換 ContentType 失敗") from e
         
-        try:
-            db_comment = DatabaseComment.objects.create(
-                author_id=comment.author_id,
-                content=comment.content,
-                is_repost= comment.is_repost,
-                repost_of_content_type= repost_of_content_type,
-                repost_of_content_item_id= comment.repost_of,
-                parent_post_id=comment.parent_post_id,
-                parent_comment_id = comment.parent_comment_id
-            )
-        except DatabasePost.DoesNotExist:
-            raise EntityDoesNotExist("轉發的貼文不存在")
-        except DatabaseError :
-            raise EntityOperationFailed("資料庫操作失敗")
+        with transaction.atomic():
+            try:
+                db_comment = DatabaseComment.objects.create(
+                    author_id=comment.author_id,
+                    content=comment.content,
+                    is_repost= comment.is_repost,
+                    repost_of_content_type= repost_of_content_type,
+                    repost_of_content_item_id= comment.repost_of,
+                    parent_post_id=comment.parent_post_id,
+                    parent_comment_id = comment.parent_comment_id
+                )
+                self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta=1)
+
+            except DatabasePost.DoesNotExist:
+                raise EntityDoesNotExist("轉發的貼文不存在")
+            except DatabaseError :
+                raise EntityOperationFailed("資料庫操作失敗")
         return self._decode_orm_comment(db_comment)
 
 
