@@ -36,7 +36,7 @@ class BaseRepository:
             repost_of_content_type= (
                 db_post.repost_of_content_type.model if db_post.repost_of_content_type else None
             ),
-            is_like = getattr(db_post, 'is_liked', False)
+            is_liked = getattr(db_post, 'is_liked', False)
         )
     
     def _decode_orm_comment(self, db_comment:DatabaseComment) -> DomainComment:
@@ -51,7 +51,10 @@ class BaseRepository:
             reposts_count=db_comment.reposts_count,
             is_repost=db_comment.is_repost,
             repost_of=db_comment.repost_of_content_item_id,
-            repost_of_content_type=db_comment.repost_of_content_type,
+            repost_of_content_type=(
+                db_comment.repost_of_content_type.model
+                if db_comment.repost_of_content_type else None
+            ),
             parent_post_id=db_comment.parent_post.id,
             parent_comment_id=db_comment.parent_comment.id if db_comment.parent_comment else None,
         )
@@ -184,16 +187,20 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
             raise EntityOperationFailed("資料庫操作失敗")
         return self._decode_orm_post(db_post)
     
-    def get_post_by_id(self, post_id:int) -> Optional[DomainPost]:
+    def get_post_by_id(self, post_id:int, auth_user_id: int) -> Optional[DomainPost]:
         try:
-            db_post = DatabasePost.objects.get(id=post_id)
+            db_post = DatabasePost.objects.annotate(
+                is_liked = Exists(DatabaseLikePost.objects.filter(
+                    user=auth_user_id,
+                    post=OuterRef('pk')
+                ))).get(id=post_id)
         except DatabasePost.DoesNotExist:
             raise EntityDoesNotExist("貼文不存在")
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
         return self._decode_orm_post(db_post)
     
-    def update_post(self, post: DomainPost) -> DomainPost:
+    def update_post(self, post: DomainPost) -> Optional[DomainPost]:
         try:
             db_post = DatabasePost.objects.get(id=post.id)
         except DatabasePost.DoesNotExist:
@@ -204,16 +211,22 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
         return self._decode_orm_post(db_post)
     
     def delete_post(self, post: DomainPost) -> None:
-        try:
-            db_post = DatabasePost.objects.get(id=post.id)
-        except DatabasePost.DoesNotExist:
-            raise EntityDoesNotExist("貼文不存在")
-        db_post.delete()
+        
+        with transaction.atomic():
+            if post.is_repost == True:
+                original_post = DatabasePost.objects.filter(id=post.repost_of).update(
+                    reposts_count = F("reposts_count") - 1
+                )
+            try:
+                db_post = DatabasePost.objects.get(id=post.id)
+            except DatabasePost.DoesNotExist:
+                raise EntityDoesNotExist("貼文不存在")
+            db_post.delete()
         return None
     
     #組裝貼文的留言
-    def get_comments_by_post_id(self, auth_user_id:int, post_id:int,offset:int,limit:int) -> List[DomainComment]:
-        db_comments = self.get_post_by_id(post_id).post_comments.all().annotate(
+    def get_comments_by_post_id(self, auth_user_id:int, post_id:int, offset:int, limit:int) -> List[DomainComment]:
+        db_comments =DatabaseComment.objects.filter(parent_post_id= post_id).annotate(
             is_like = Exists(DatabaseLikeComment.objects.filter(
                 user = auth_user_id,
                 comment=OuterRef('pk')
@@ -225,7 +238,7 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
     def get_all_posts(self,auth_user_id:int ,offset:int ,limit:int) -> List[DomainPost]:
         try:
             db_posts = DatabasePost.objects.all().annotate(
-                is_like = Exists(DatabaseLikePost.objects.filter(
+                is_liked = Exists(DatabaseLikePost.objects.filter(
                     user=auth_user_id,
                     post=OuterRef('pk')
                 ))
@@ -272,24 +285,33 @@ class PostRepositoryImpl(PostRepository, BaseRepository):
         except ValueError as e:
             raise EntityOperationFailed("轉換 ContentType 失敗") from e
         
-        try:
-            db_post = DatabasePost.objects.create(
-                author_id=post.author_id,
-                content=post.content,
-                is_repost= post.is_repost,
-                repost_of_content_type= repost_of_content_type,
-                repost_of_content_item_id= post.repost_of
-            )
-        except DatabasePost.DoesNotExist:
-            raise EntityDoesNotExist("轉發的貼文不存在")
-        except DatabaseError :
-            raise EntityOperationFailed("資料庫操作失敗")
+        with transaction.atomic():
+            try:
+                db_post = DatabasePost.objects.create(
+                    author_id=post.author_id,
+                    content=post.content,
+                    is_repost= post.is_repost,
+                    repost_of_content_type= repost_of_content_type,
+                    repost_of_content_item_id= post.repost_of
+                )
+                db_original_post = DatabasePost.objects.filter(id=post.repost_of).update(
+                    reposts_count= F('reposts_count') + 1
+                )
+            except DatabasePost.DoesNotExist:
+                raise EntityDoesNotExist("轉發的貼文不存在")
+            except DatabaseError :
+                raise EntityOperationFailed("資料庫操作失敗")
         return self._decode_orm_post(db_post)
 
 class CommentRepositoryImpl(CommentRepository, BaseRepository):
-    def get_comment_by_id(self, comment_id: int) -> Optional[DomainComment]:
+    def get_comment_by_id(self, comment_id: int, auth_user_id: int) -> Optional[DomainComment]:
         try:
-            db_comment = DatabaseComment.objects.get(id = comment_id)
+            db_comment = DatabaseComment.objects.annotate(
+                is_liked = Exists(DatabaseLikeComment.objects.filter(
+                    user = auth_user_id,
+                    comment = OuterRef('pk')
+                ))
+            ).get(id = comment_id)
         except DatabaseComment.DoesNotExist:
             raise EntityDoesNotExist("留言不存在")
         except DatabaseError:
@@ -299,10 +321,10 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
     def create_comment(self, comment: DomainComment) -> DomainComment:
         try:
             db_comment = DatabaseComment.objects.create(
-                author = comment.author_id,
+                author_id = comment.author_id,
                 content = comment.content,
-                parent_post = comment.parent_post_id,
-                parent_comment = comment.parent_comment_id
+                parent_post_id = comment.parent_post_id,
+                parent_comment_id = comment.parent_comment_id
             )
         except DatabaseUser.DoesNotExist:
             raise EntityDoesNotExist("使用者不存在")
@@ -312,29 +334,24 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
             raise EntityDoesNotExist("留言不存在")
         except DatabaseError:
             raise EntityOperationFailed("資料庫操作失敗")
-        return BaseRepository._decode_orm_comment(db_comment)
+        return self._decode_orm_comment(db_comment)
 
-    def update_comment(self, user_id: int, comment: DomainComment) -> DomainComment:
+    def update_comment(self, comment: DomainComment) -> Optional[DomainComment]:
         try:
             db_comment = DatabaseComment.objects.get(id = comment.id)
-            if db_comment.author_id == user_id:
-                db_comment.content = comment.content
-                db_comment.save()
-            else:
-                raise EntityOperationFailed("無權限更新貼文")
         except DatabaseComment.DoesNotExist:
             raise EntityDoesNotExist("留言不存在")
         except DatabaseError:
             raise EntityOperationFailed("資料庫操作失敗")
-        return BaseRepository._decode_orm_comment(db_comment)
+        db_comment.content = comment.content
+        db_comment.updated_at = comment.updated_at
+        db_comment.save()
+        return self._decode_orm_comment(db_comment)
     
-    def delete_comment(self, user_id: int, comment_id: int) -> None:
+    def delete_comment(self, comment: DomainComment) -> None:    
         try:
-            db_comment = DatabaseComment.objects.get(id = comment_id)
-            if db_comment.author_id == user_id: 
-                db_comment.delete()
-            else:
-                raise EntityOperationFailed("無權限更新貼文")
+            db_comment = DatabaseComment.objects.get(id = comment.id)
+            db_comment.delete()
         except DatabaseComment.DoesNotExist:
             raise EntityDoesNotExist("留言不存在")
         except DatabaseError:
@@ -343,7 +360,7 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
     
     def get_all_child_comments_by_comment_id(self, auth_user_id:int, comment:DomainComment, offset:int, limit:int) -> List[DomainComment]:
         try:
-            db_comments = DatabaseComment.objects.filter(parent_comment = comment).annotate(
+            db_comments = DatabaseComment.objects.filter(parent_comment_id = comment.id).annotate(
                 is_like = Exists(DatabaseLikeComment.objects.filter(
                     user = auth_user_id,
                     comment = OuterRef('pk')
@@ -355,28 +372,30 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
                 raise EntityDoesNotExist("留言不存在")
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
-        return [BaseRepository._decode_orm_comment(db_comment) for db_comment in db_comments]
+        return [self._decode_orm_comment(db_comment) for db_comment in db_comments]
         
     def repost_comment(self, comment: DomainComment) -> DomainComment:
 
         try:
-            repost_of_content_type = BaseRepository.get_content_type_from_literal(comment.repost_of_content_type)
+            repost_of_content_type = self.get_content_type_from_literal(comment.repost_of_content_type)
         except ValueError as e:
             raise EntityOperationFailed("轉換 ContentType 失敗") from e
         
         try:
             db_comment = DatabaseComment.objects.create(
-                author=comment.author_id,
+                author_id=comment.author_id,
                 content=comment.content,
                 is_repost= comment.is_repost,
                 repost_of_content_type= repost_of_content_type,
-                repost_of_content_item_id= comment.repost_of
+                repost_of_content_item_id= comment.repost_of,
+                parent_post_id=comment.parent_post_id,
+                parent_comment_id = comment.parent_comment_id
             )
         except DatabasePost.DoesNotExist:
             raise EntityDoesNotExist("轉發的貼文不存在")
         except DatabaseError :
             raise EntityOperationFailed("資料庫操作失敗")
-        return BaseRepository._decode_orm_post(db_comment)
+        return self._decode_orm_comment(db_comment)
 
 
 class LikeRepositoryImpl(LikeRepository):

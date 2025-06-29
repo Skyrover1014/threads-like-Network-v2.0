@@ -17,13 +17,14 @@ from threads.use_cases.commands.create_post import CreatePost
 from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.use_cases.commands.update_post import UpdatePost
 from threads.use_cases.commands.delete_post import DeletePost
-from threads.use_cases.commands.repost_post import CreateRePost
+from threads.use_cases.commands.repost_content import CreateRePost
 from threads.use_cases.commands.create_like import CreateLike
 from threads.use_cases.commands.delete_like import DeleteLike
 from threads.use_cases.queries.get_like_by_id import GetLikeById
+from threads.use_cases.queries.get_comment_by_id import GetCommentById
 
 
-from .serializers import UserSerializer, RegisterUserSerializer, PostSerializer, CreatePostSerializer, CommentSerializer, RepostSerializer, LikeSerializer
+from .serializers import UserSerializer, RegisterUserSerializer, LikeSerializer
 from threads.common.exceptions import EntityAlreadyExists, EntityOperationFailed, EntityDoesNotExist
 from django.db import IntegrityError
 
@@ -62,168 +63,6 @@ class GetUserProfileView(APIView):
         domain_user = GetUserProfile(UserRepositoryImpl()).execute(user_id)
         serializers = UserSerializer(domain_user)
         return Response(serializers.data, status=status.HTTP_200_OK)
-   
-class PostListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        auth_user_id = request.query_params.get("auth_user_id")
-        author_id = request.query_params.get("author_id")
-        following = request.query_params.get("following") == "true"
-        offset = int(request.query_params.get("offset", 0))
-        limit = int(request.query_params.get("limit", 10))
-        
-        repo = PostRepositoryImpl()
-
-        if author_id:
-            try:
-                domain_posts = GetProfilePost(repo).execute(auth_user_id, author_id, offset, limit)
-            except EntityDoesNotExist as e:
-                return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
-            except EntityOperationFailed as e:
-                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        elif following:
-            try:
-                following_ids = GetFollowingUserIds(UserRepositoryImpl()).execute(auth_user_id)
-            except EntityDoesNotExist as e:
-                return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
-            except EntityOperationFailed as e:
-                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            try:
-                domain_posts = GetFollowingsPost(repo).execute(auth_user_id, following_ids, offset, limit)
-            except EntityDoesNotExist as e:
-                return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
-            except EntityOperationFailed as e:
-                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            try:
-                domain_posts = GetAllPost(repo).execute(auth_user_id, offset, limit)
-            except EntityOperationFailed as e:
-                return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-         
-        serializers = PostSerializer(domain_posts, many=True)
-        return Response(serializers.data, status=status.HTTP_200_OK)
-    
-    def post(self, request):
-        serializers = CreatePostSerializer(data=request.data)
-        serializers.is_valid(raise_exception=True)
-       
-        author_id = serializers.validated_data["author_id"]
-        content = serializers.validated_data["content"]
-
-        try:
-            post = CreatePost(PostRepositoryImpl()).execute(author_id,content)
-        except ValueError as e:
-            return Response({'error':str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except EntityOperationFailed as e:
-            return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except EntityDoesNotExist as e:
-            return Response({'error':str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        print(post)
-        return Response({"message": "Post created successfully"}, status=status.HTTP_200_OK)
-
-class PostDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, post_id):
-        try:
-            domain_post =  GetPostById(PostRepositoryImpl()).execute(post_id)
-        except EntityDoesNotExist as e:
-            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except EntityOperationFailed as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        
-        
-        serializers = PostSerializer(domain_post)
-        return Response(serializers.data, status=status.HTTP_200_OK)
-    
-    def patch(self, request, post_id):
-        try:
-            old_domain_post = GetPostById(PostRepositoryImpl()).execute(post_id)
-        except EntityDoesNotExist as e:
-            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND) 
-        except EntityOperationFailed as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializers = PostSerializer(old_domain_post, data=request.data, partial = True)
-        serializers.is_valid(raise_exception=True)
-        data = serializers.validated_data
-
-        try:
-            old_domain_post.update_content(data.get("content",old_domain_post.content), request.user.id)
-        except PermissionError as e:
-            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
-        
-        updated = UpdatePost(PostRepositoryImpl()).execute(old_domain_post)
-        return Response(PostSerializer(updated).data, status=status.HTTP_200_OK)
-    
-    def delete(self, request, post_id):
-        try:
-            target_domain_post = GetPostById(PostRepositoryImpl()).execute(post_id)
-        except EntityDoesNotExist as e:
-            return Response({'error':str(e)}, status=status.HTTP_404_NOT_FOUND) 
-        except EntityOperationFailed as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 
-        try: 
-            target_domain_post.verify_deletable_by(request.user.id)
-        except PermissionError as e:
-            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
-
-        DeletePost(PostRepositoryImpl()).execute(target_domain_post)
-        return Response({"message":"Post deleted successfully"},status=status.HTTP_204_NO_CONTENT)
-
-
-class RepostView(APIView):
-    permission_classes = [IsAuthenticated]
- 
-    def post(self, request, post_id):
-        serializers = RepostSerializer(data=request.data)
-        serializers.is_valid(raise_exception=True)
-       
-        author_id = serializers.validated_data["author_id"]
-        content = serializers.validated_data["content"]
-        is_repost = serializers.validated_data["is_repost"]
-        repost_of = post_id
-        repost_of_content_type = serializers.validated_data["repost_of_content_type"]
-
-        try:
-            re_post = CreateRePost(PostRepositoryImpl(), CommentRepositoryImpl()).execute(author_id,content,is_repost,repost_of, repost_of_content_type)
-        except ValueError as e:
-            return Response({'error':str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except EntityOperationFailed as e:
-            return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except EntityDoesNotExist as e:
-            return Response({'error':str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        print(re_post)
-
-        post =  PostSerializer(re_post.repost).data
-        if repost_of_content_type == "post":
-            original = PostSerializer(re_post.original).data
-            response_data = {
-                "message": "Post created successfully",
-                "post": post,
-                "original_post": original,
-            } 
-        elif repost_of_content_type == "comment":
-            original = CommentSerializer(re_post.original).data
-            response_data = {
-                "message": "Post created successfully",
-                "post": post,
-                "original_comment": original,
-            }
-        else:
-            return Response({"error": "Unknown content type."}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(response_data, status=status.HTTP_201_CREATED)
-
 
 
 class LikeContentView(APIView):
@@ -290,5 +129,4 @@ class LikeContentView(APIView):
             return Response({'error':str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message":"Like deleted successfully"},status=status.HTTP_204_NO_CONTENT)
  
-         
         
