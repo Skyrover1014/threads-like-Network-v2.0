@@ -32,7 +32,7 @@ class PostDetailView(PostBaseView):
         try:
             old_domain_post = self._get_post_by_id(request, post_id)
         except Exception as e:
-            return self.handle_exception(e)
+            return self.handler_exception(e)
         
         serializers = PostSerializer(old_domain_post, data=request.data, partial = True)
         serializers.is_valid(raise_exception=True)

@@ -428,104 +428,116 @@ class CommentRepositoryImpl(CommentRepository, BaseRepository):
         return self._decode_orm_comment(db_comment)
 
 
-class LikeRepositoryImpl(LikeRepository):
-    def create_like(self, like: DomainLike) -> DomainLike:
-        if like.content_type == "post":
-            try:
-                with transaction.atomic():
-                    db_like = DatabaseLikePost.objects.create(
-                        user_id = like.user_id,
-                        post_id = like.content_item_id
-                    )
-                    db_post = DatabasePost.objects.filter(id=like.content_item_id).update(
-                        likes_count=F('likes_count') + 1  
-                    )
-            except IntegrityError:
-                raise EntityAlreadyExists("已經按讚過了")
-            except DatabasePost.DoesNotExist:
-                raise EntityDoesNotExist("貼文不存在")
-            except DatabaseError :
-                raise EntityOperationFailed("資料庫操作失敗")
-        else:
-            try:
-                 with transaction.atomic():
-                    db_like = DatabaseLikeComment.objects.create(
-                        user_id = like.user_id,
-                        comment_id = like.content_item_id
-                    )
-                    db_comment = DatabaseComment.objects.get(id=like.content_item_id)
-                    db_comment.likes_count += 1
-                    db_comment.save()
-            except IntegrityError:
-                raise EntityAlreadyExists("已經按讚過了")
-            except DatabaseComment.DoesNotExist:
-                raise EntityDoesNotExist("Comment 不存在")
-            except DatabaseError :
-                raise EntityOperationFailed("資料庫操作失敗")
-        return self._decode_orm_like(db_like) 
+# class LikeRepositoryImpl(LikeRepository):
+#     def create_like(self, like: DomainLike) -> DomainLike:
+#         if like.content_type == "post":
+#             try:
+#                 with transaction.atomic():
+#                     if not DatabasePost.objects.filter(id=like.content_item_id).exists():
+#                         raise EntityDoesNotExist("貼文不存在")
+ 
+#                     db_like = DatabaseLikePost.objects.create(
+#                         user_id = like.user_id,
+#                         post_id = like.content_item_id
+#                     )
+#                     db_post = DatabasePost.objects.filter(id=like.content_item_id).update(
+#                         likes_count=F('likes_count') + 1  
+#                     )
+#             except IntegrityError:
+#                 raise EntityAlreadyExists("已經按讚過了")
+#             except DatabaseError :
+#                 raise EntityOperationFailed("資料庫操作失敗")
+#         else:
+#             try:
+#                  with transaction.atomic():
+#                     if not DatabaseComment.objects.filter(id=like.content_item_id).exists():
+#                         raise EntityDoesNotExist("留言不存在")
+                    
+#                     db_like = DatabaseLikeComment.objects.create(
+#                         user_id = like.user_id,
+#                         comment_id = like.content_item_id
+#                     )
+#                     db_comment = DatabaseComment.objects.get(id=like.content_item_id)
+#                     db_comment.likes_count += 1
+#                     db_comment.save()
+#             except IntegrityError:
+#                 raise EntityAlreadyExists("已經按讚過了")
+#             except DatabaseError :
+#                 raise EntityOperationFailed("資料庫操作失敗")
+#         return self._decode_orm_like(db_like) 
     
-    def delete_like(self, like: DomainLike) -> None:
-        if like.content_type == "post":
-            try:
-                with transaction.atomic():
-                    db_like = DatabaseLikePost.objects.get(id = like.id)
-                    db_like.delete()
-                    db_post = DatabasePost.objects.filter(id=like.content_item_id).update(
-                        likes_count=F('likes_count') - 1  
-                    )
-            except DatabaseLikePost.DoesNotExist:
-                raise EntityDoesNotExist("Post Like 不存在")
-            except DatabaseError:
-                raise EntityOperationFailed("資料庫操作失敗")
-        else:
-            try:
-                with transaction.atomic():
-                    db_like = DatabaseLikeComment.objects.get(id = like.id)
-                    db_like.delete()
-                    db_comment = DatabaseComment.objects.filter(id=like.content_item_id).update(
-                        likes_count=F('likes_count') - 1  
-                    )
-            except DatabaseLikeComment.DoesNotExist:
-                raise EntityDoesNotExist("Comment Like 不存在")
-            except DatabaseError:
-                raise EntityOperationFailed("資料庫操作失敗") 
-        return None
+#     def delete_like(self, like: DomainLike) -> None:
+#         if like.content_type == "post":
+#             try:
+#                 with transaction.atomic():
+#                     if not DatabasePost.objects.filter(id=like.content_item_id).exists():
+#                         raise EntityDoesNotExist("貼文不存在")
+                    
+#                     db_like = DatabaseLikePost.objects.get(id = like.id)
+#                     db_like.delete()
+#                     db_post = DatabasePost.objects.filter(id=like.content_item_id).update(
+#                         likes_count=F('likes_count') - 1  
+#                     )
+#             except DatabaseLikePost.DoesNotExist:
+#                 raise EntityDoesNotExist("Post Like 紀錄不存在")
+#             except DatabaseError:
+#                 raise EntityOperationFailed("資料庫操作失敗")
+#         else:
+#             try:
+#                 with transaction.atomic():
+#                     if not DatabaseComment.objects.filter(id=like.content_item_id).exists():
+#                         raise EntityDoesNotExist("留言不存在")
+                    
+#                     db_like = DatabaseLikeComment.objects.get(id = like.id)
+#                     db_like.delete()
+#                     db_comment = DatabaseComment.objects.filter(id=like.content_item_id).update(
+#                         likes_count=F('likes_count') - 1  
+#                     )
+#             except DatabaseLikeComment.DoesNotExist:
+#                 raise EntityDoesNotExist("Comment Like 紀錄不存在")
+#             except DatabaseError:
+#                 raise EntityOperationFailed("資料庫操作失敗") 
+#         return None
     
-    def get_like_by_id(self, user_id:int, content_id: int, content_type: Literal['post','comment']) -> Optional[DomainLike]:
-        if content_type == 'post':
-            try:
-                db_like = DatabaseLikePost.objects.get( user_id = user_id, post_id = content_id)
-            except DatabaseLikePost.DoesNotExist:
-                raise EntityDoesNotExist("Post Like 紀錄不存在")
-            except DatabaseError :
-                raise EntityOperationFailed("資料庫操作失敗")
-        else: 
-            try:
-                db_like = DatabaseLikeComment.objects.get(user_id=user_id, comment_id = content_id)
-            except DatabaseLikeComment.DoesNotExist:
-                raise EntityDoesNotExist("Comment Like 紀錄不存在")
-            except DatabaseError :
-                raise EntityOperationFailed("資料庫操作失敗")
-        return self._decode_orm_like(db_like)
+#     def get_like_by_id(self, user_id:int, content_id: int, content_type: Literal['post','comment']) -> Optional[DomainLike]:
+#         if content_type == 'post':
+#             try:
+#                 if not DatabasePost.objects.filter(id=content_id).exists():
+#                     raise EntityDoesNotExist("貼文不存在")
+#                 db_like = DatabaseLikePost.objects.get( user_id = user_id, post_id = content_id)
+#             except DatabaseLikePost.DoesNotExist:
+#                 raise EntityDoesNotExist("Post Like 紀錄不存在")
+#             except DatabaseError :
+#                 raise EntityOperationFailed("資料庫操作失敗")
+#         else: 
+#             try:
+#                 if not DatabaseComment.objects.filter(id=content_id).exists():
+#                     raise EntityDoesNotExist("留言不存在")
+#                 db_like = DatabaseLikeComment.objects.get(user_id=user_id, comment_id = content_id)
+#             except DatabaseLikeComment.DoesNotExist:
+#                 raise EntityDoesNotExist("Comment Like 紀錄不存在")
+#             except DatabaseError :
+#                 raise EntityOperationFailed("資料庫操作失敗")
+#         return self._decode_orm_like(db_like)
     
 
         
         
-    def _decode_orm_like(self, db_like: Union[DatabaseLikePost, DatabaseLikeComment]) -> DomainLike:
-        if isinstance(db_like, DatabaseLikePost):
-            return DomainLike(
-                id = db_like.id,
-                user_id=db_like.user.id,
-                content_item_id=db_like.post.id,
-                content_type="post"
-            )
-        elif isinstance(db_like, DatabaseLikeComment):
-            return DomainLike(
-                id = db_like.id,
-                user_id=db_like.user.id,
-                content_item_id=db_like.comment.id,
-                content_type="comment"
-            )
-        else:
-            raise EntityOperationFailed("不支援的 Like 實體型別")
+#     def _decode_orm_like(self, db_like: Union[DatabaseLikePost, DatabaseLikeComment]) -> DomainLike:
+#         if isinstance(db_like, DatabaseLikePost):
+#             return DomainLike(
+#                 id = db_like.id,
+#                 user_id=db_like.user.id,
+#                 content_item_id=db_like.post.id,
+#                 content_type="post"
+#             )
+#         elif isinstance(db_like, DatabaseLikeComment):
+#             return DomainLike(
+#                 id = db_like.id,
+#                 user_id=db_like.user.id,
+#                 content_item_id=db_like.comment.id,
+#                 content_type="comment"
+#             )
+#         else:
+#             raise EntityOperationFailed("不支援的 Like 實體型別")
         

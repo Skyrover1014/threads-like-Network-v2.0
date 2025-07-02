@@ -1,7 +1,7 @@
 from threads.domain.repository import CommentRepository
 from threads.domain.entities import Comment as DomainComment
 
-from typing import Optional, List
+from typing import List
 
 
 

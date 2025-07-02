@@ -10,7 +10,7 @@ from .interface.comments.child_comment_view import ChildCommentListCreateView
 
 from .interface.reposts.repost_post_view import RepostPostView
 from .interface.reposts.repost_comment_view import RepostCommentView
-from .interface.views import LikeContentView
+from .interface.likes.like_view import LikeContentView
 
 urlpatterns = [
     path('users/', RegisterUserView.as_view(), name='user_register'),

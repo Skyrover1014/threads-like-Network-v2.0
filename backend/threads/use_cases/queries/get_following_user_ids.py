@@ -1,6 +1,5 @@
 from threads.domain.repository import UserRepository
-from threads.domain.entities import User as DomainPost
-from typing import Optional, List
+from typing import List
 
 
 class GetFollowingUserIds:

@@ -1,6 +1,6 @@
 from threads.domain.repository import PostRepository
-from threads.domain.entities import User as DomainPost
-from typing import Optional, List
+from threads.domain.entities import Post as DomainPost
+from typing import List
 
 
 class GetFollowingsPost:
