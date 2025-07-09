@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 
 
 
-from ..Serializers.post_serializer import PostSerializer
+from ..serializers.post_serializer import PostSerializer
 from .post_baseView import PostBaseView
 
 from threads.infrastructure.repository.post_repository import PostRepositoryImpl

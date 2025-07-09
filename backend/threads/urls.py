@@ -1,10 +1,13 @@
 from django.urls import path
-from .interface.views import RegisterUserView, GetUserProfileView
+
+from .interface.users.users_view import UserCreateView
+from .interface.users.user_view import UserDetailView
 
 from .interface.posts.posts_view import PostListCreateView
 from .interface.posts.post_view import PostDetailView
-from .interface.comments.comment_view  import CommentDetailView
+
 from .interface.comments.post_comments_view import CommentListCreateView
+from .interface.comments.comment_view  import CommentDetailView
 from .interface.comments.child_comment_view import ChildCommentListCreateView
 
 
@@ -15,8 +18,8 @@ from .interface.likes.like_view import LikeContentView
 from .interface.util.ask_gpt import AskGPTView
 
 urlpatterns = [
-    path('users/', RegisterUserView.as_view(), name='user_register'),
-    path('users/<int:user_id>/', GetUserProfileView.as_view(), name='user_profile'),
+    path('users/', UserCreateView.as_view(), name='user_register'),
+    path('users/<int:user_id>/', UserDetailView.as_view(), name='user_profile'),
     
     # posts 列表跟新增
     path('posts/', PostListCreateView.as_view(), name="posts_list_create"),

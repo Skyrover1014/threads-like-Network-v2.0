@@ -3,12 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from ..Serializers.post_serializer import PostSerializer, CreatePostSerializer
+from ..serializers.post_serializer import PostSerializer, CreatePostSerializer
 from .post_baseView import PostBaseView
-from threads.repositories import UserRepositoryImpl
+from threads.infrastructure.repository.user_repository import UserRepositoryImpl
 from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 
-# from threads.infrastructure.repository.user_repository import UserRepositoryImpl
 
 from threads.use_cases.queries.get_profile_posts import GetProfilePost
 from threads.use_cases.queries.get_followings_posts import GetFollowingsPost

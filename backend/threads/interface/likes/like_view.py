@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from threads.infrastructure.like_repository import LikeRepositoryImpl
 
-from ..Serializers.like_serializer import LikeSerializer
+from ..serializers.like_serializer import LikeSerializer
 from .like_baseView import LikeBaseView
 
 from threads.use_cases.queries.get_like_by_id import GetLikeById

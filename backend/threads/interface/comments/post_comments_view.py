@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 
 
 from .comment_baseView import CommentBaseView
-from ..Serializers.comment_serializer import CommentSerializer, CreateCommentSerializer
+from ..serializers.comment_serializer import CommentSerializer, CreateCommentSerializer
 
 from threads.infrastructure.repository.comment_repository import CommentRepositoryImpl
 from threads.use_cases.commands.create_comment import CreateComment
