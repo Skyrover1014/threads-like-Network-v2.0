@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .comment_baseView import CommentBaseView
 from ..Serializers.comment_serializer import CommentSerializer
 
-from threads.repositories import CommentRepositoryImpl
+from threads.infrastructure.repository.comment_repository import CommentRepositoryImpl
 from threads.use_cases.queries.get_comment_by_id import GetCommentById
 from threads.use_cases.commands.update_comment import UpdateComment
 from threads.use_cases.commands.delete_comment import DeleteComment

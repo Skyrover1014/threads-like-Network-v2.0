@@ -3,17 +3,13 @@ from threads.domain.entities import Post as DomainPost
 from threads.domain.entities import Comment as DomainComment
 from threads.models import Post as DatabasePost
 from threads.models import User as DatabaseUser
-from threads.models import LikePost as DatabaseLikePost
 from threads.models import Comment as DatabaseComment
-from threads.models import LikeComment as DatabaseLikeComment
+from threads.infrastructure.repository.content_base_repository import ContentBaseRepository
+
 
 from threads.common.exceptions import EntityDoesNotExist, EntityOperationFailed
 from django.db import DatabaseError,transaction
-
-
 from typing import Optional, List
-from django.db.models import Exists, OuterRef
-from threads.infrastructure.repository.content_base_repository import ContentBaseRepository
     
 
 class PostRepositoryImpl(PostRepository, ContentBaseRepository):
@@ -62,13 +58,7 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             db_post.delete()
         return None
     
-    #組裝貼文的留言
-    def get_comments_by_post_id(self, auth_user_id:int, post_id:int, offset:int, limit:int) -> List[DomainComment]:
-        db_comments =DatabaseComment.objects.filter(parent_post_id= post_id).annotate(
-            is_liked = self._annotate_is_liked_for_content("comment", auth_user_id)
-        ).order_by('created_at')[offset:offset+limit]
-        return [self._decode_orm_comment(db_comment) for db_comment in db_comments]
-
+    
     #組裝Home-Page貼文列表
     def get_all_posts(self,auth_user_id:int ,offset:int ,limit:int) -> List[DomainPost]:
         try:

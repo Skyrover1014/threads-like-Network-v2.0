@@ -6,8 +6,8 @@ from threads.interface.util.error_response import error_response
 from threads.common.exceptions import EntityAlreadyExists, EntityOperationFailed, EntityDoesNotExist
 
 from threads.use_cases.queries.get_comment_by_id import GetCommentById
-from threads.repositories import CommentRepositoryImpl
 
+from threads.infrastructure.repository.comment_repository import CommentRepositoryImpl
 
 
 

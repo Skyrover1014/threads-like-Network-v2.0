@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .comment_baseView import CommentBaseView
 from ..Serializers.comment_serializer import CommentSerializer, CreateChildCommentSerializer
 
-from threads.repositories import CommentRepositoryImpl
+from threads.infrastructure.repository.comment_repository import CommentRepositoryImpl
 from threads.use_cases.commands.create_comment import CreateComment
 from threads.use_cases.queries.get_child_comments_by_comment_id import GetChildCommentsByCommentId
 

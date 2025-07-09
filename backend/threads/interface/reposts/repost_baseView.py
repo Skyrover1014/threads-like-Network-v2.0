@@ -8,7 +8,8 @@ from threads.common.exceptions import EntityOperationFailed, EntityDoesNotExist
 from ..Serializers.repost_serializer import RepostSerializer
 from ..Serializers.post_serializer import PostSerializer
 from ..Serializers.comment_serializer import CommentSerializer
-from threads.repositories import CommentRepositoryImpl
+
+from threads.infrastructure.repository.comment_repository import CommentRepositoryImpl
 from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 
 from threads.use_cases.commands.repost_content import CreateRePost

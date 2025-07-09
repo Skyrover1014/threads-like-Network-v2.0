@@ -82,10 +82,6 @@ class PostRepository(ABC):
         pass
 
     @abstractmethod
-    def get_comments_by_post_id(self,auth_user_id:int, post_id:int, offset:int, limit:int) -> List[DomainComment]:
-        pass
-
-    @abstractmethod
     def get_all_posts(self,auth_user_id:int, offset:int,limit:int) -> List[DomainPost]:
         pass
     
@@ -116,6 +112,11 @@ class CommentRepository(ABC):
     @abstractmethod
     def delete_comment(self, user_id:int, comment_id:int) -> None:
         pass
+
+    @abstractmethod
+    def get_comments_by_post_id(self,auth_user_id:int, post_id:int, offset:int, limit:int) -> List[DomainComment]:
+        pass
+    
     @abstractmethod
     def get_all_child_comments_by_comment_id(self,auth_user_id:int, comment_id:int, offset:int, limit:int) -> List[DomainComment]:
         pass
