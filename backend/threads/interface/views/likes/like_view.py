@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from threads.infrastructure.like_repository import LikeRepositoryImpl
+from threads.infrastructure.repository.like_repository import LikeRepositoryImpl
 
-from ..serializers.like_serializer import LikeSerializer
+from ...serializers.like_serializer import LikeSerializer
 from .like_baseView import LikeBaseView
 
 from threads.use_cases.queries.get_like_by_id import GetLikeById

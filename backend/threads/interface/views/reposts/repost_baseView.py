@@ -5,9 +5,9 @@ from rest_framework import status
 from threads.interface.util.error_response import error_response
 from threads.common.exceptions import EntityOperationFailed, EntityDoesNotExist
 
-from ..serializers.repost_serializer import RepostSerializer
-from ..serializers.post_serializer import PostSerializer
-from ..serializers.comment_serializer import CommentSerializer
+from ...serializers.repost_serializer import RepostSerializer
+from ...serializers.post_serializer import PostSerializer
+from ...serializers.comment_serializer import CommentSerializer
 
 from threads.infrastructure.repository.comment_repository import CommentRepositoryImpl
 from threads.infrastructure.repository.post_repository import PostRepositoryImpl

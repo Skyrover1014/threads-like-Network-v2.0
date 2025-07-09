@@ -1,19 +1,19 @@
 from django.urls import path
 
-from .interface.users.users_view import UserCreateView
-from .interface.users.user_view import UserDetailView
+from .interface.views.users.users_view import UserCreateView
+from .interface.views.users.user_view import UserDetailView
 
-from .interface.posts.posts_view import PostListCreateView
-from .interface.posts.post_view import PostDetailView
+from .interface.views.posts.posts_view import PostListCreateView
+from .interface.views.posts.post_view import PostDetailView
 
-from .interface.comments.post_comments_view import CommentListCreateView
-from .interface.comments.comment_view  import CommentDetailView
-from .interface.comments.child_comment_view import ChildCommentListCreateView
+from .interface.views.comments.post_comments_view import CommentListCreateView
+from .interface.views.comments.comment_view  import CommentDetailView
+from .interface.views.comments.child_comment_view import ChildCommentListCreateView
 
 
-from .interface.reposts.repost_post_view import RepostPostView
-from .interface.reposts.repost_comment_view import RepostCommentView
-from .interface.likes.like_view import LikeContentView
+from .interface.views.reposts.repost_post_view import RepostPostView
+from .interface.views.reposts.repost_comment_view import RepostCommentView
+from .interface.views.likes.like_view import LikeContentView
 
 from .interface.util.ask_gpt import AskGPTView
 
