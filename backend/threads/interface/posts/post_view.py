@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from ..Serializers.post_serializer import PostSerializer
 from .post_baseView import PostBaseView
 
-from threads.repositories import PostRepositoryImpl
+from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.use_cases.commands.update_post import UpdatePost
 from threads.use_cases.commands.delete_post import DeletePost

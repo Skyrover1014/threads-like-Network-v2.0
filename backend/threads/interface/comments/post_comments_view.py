@@ -8,7 +8,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .comment_baseView import CommentBaseView
 from ..Serializers.comment_serializer import CommentSerializer, CreateCommentSerializer
 
-from threads.repositories import CommentRepositoryImpl, PostRepositoryImpl
+from threads.repositories import CommentRepositoryImpl
+from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 from threads.use_cases.commands.create_comment import CreateComment
 from threads.use_cases.queries.get_comments_by_post_id import GetCommentsByPostId
 
@@ -41,6 +42,7 @@ class CommentListCreateView(CommentBaseView):
             domain_comments = GetCommentsByPostId(repo).execute(auth_user_id, post_id, offset, limit)
         except Exception as e:
             return self._handler_exception(e)
+        
         
         serializers = CommentSerializer(domain_comments, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)

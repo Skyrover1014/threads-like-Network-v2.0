@@ -13,7 +13,7 @@ class CommentSerializer(serializers.Serializer):
 
     is_liked = serializers.BooleanField()
     is_repost = serializers.BooleanField()
-    repost_of = serializers.IntegerField()
+    repost_of = serializers.IntegerField(allow_null = True, required = False)
     repost_of_content_type = serializers.ChoiceField(
         choices=[('post','post'),('comment','comment')],
         allow_null = True,

@@ -31,6 +31,7 @@ class LikeBaseRepository:
                 content_item_id=db_like.comment.id,
                 content_type="comment"
             )
+    
     def check_target_content_exists(self, content_type: str, content_id:int):
         target_databases = {
             "post": DatabasePost,
@@ -68,6 +69,7 @@ class LikeBaseRepository:
         model.objects.filter(id=content_id).update(
             likes_count=F('likes_count') + delta    
         )
+    
     
    
 

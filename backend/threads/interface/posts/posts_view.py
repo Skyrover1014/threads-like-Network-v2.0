@@ -5,7 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from ..Serializers.post_serializer import PostSerializer, CreatePostSerializer
 from .post_baseView import PostBaseView
-from threads.repositories import PostRepositoryImpl, UserRepositoryImpl
+from threads.repositories import UserRepositoryImpl
+from threads.infrastructure.repository.post_repository import PostRepositoryImpl
+
+# from threads.infrastructure.repository.user_repository import UserRepositoryImpl
 
 from threads.use_cases.queries.get_profile_posts import GetProfilePost
 from threads.use_cases.queries.get_followings_posts import GetFollowingsPost
@@ -13,11 +16,19 @@ from threads.use_cases.queries.get_all_posts import GetAllPost
 from threads.use_cases.queries.get_following_user_ids import GetFollowingUserIds
 from threads.use_cases.commands.create_post import CreatePost
 
+from drf_spectacular.utils import extend_schema
+
+
 
 
 class PostListCreateView(PostBaseView):
     permission_classes = [IsAuthenticated]
-
+    
+    @extend_schema(
+        summary="取得貼文列表",
+        description="支援 author_id、following 篩選，可用 offset、limit 分頁。",
+        responses=PostSerializer(many=True)
+    )
     def get(self, request):
         auth_user_id = request.user.id
         author_id = request.query_params.get("author_id")
