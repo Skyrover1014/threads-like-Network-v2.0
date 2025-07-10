@@ -16,6 +16,8 @@ from .interface.views.reposts.repost_comment_view import RepostCommentView
 from .interface.views.likes.like_view import LikeContentView
 
 from .interface.util.ask_gpt import AskGPTView
+from .interface.views.fact_checks.post_fact_check_view import PostFactCheckView
+from .interface.views.fact_checks.comment_fact_check_view import CommentFactCheckView
 
 urlpatterns = [
     path('users/', UserCreateView.as_view(), name='user_register'),
@@ -44,5 +46,7 @@ urlpatterns = [
     path('posts/<int:content_id>/like',LikeContentView.as_view(), {"content_type": "post"}),
     path('comments/<int:content_id>/like', LikeContentView.as_view(), {"content_type": "comment"}),
 
-    path('gpt/', AskGPTView.as_view(), name="test_api")
+    path('gpt/', AskGPTView.as_view(), name="test_api"),
+    path('posts/<int:post_id>/factCheck' , PostFactCheckView.as_view(), name="post_fact_check_with_ai"),
+    path('comments/<int:comment_id>/factCheck', CommentFactCheckView.as_view(), name="comment_fact_check_with_ai")
 ]
