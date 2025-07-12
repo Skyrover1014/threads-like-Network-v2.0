@@ -80,17 +80,12 @@ class ChildCommentListCreateView(CommentBaseView):
 
     def get(self, request, comment_id):
         
-        try:
-            domain_comment = self._get_comment_by_id(request,comment_id)
-        except Exception as e:
-            return self._handler_exception(e)
-        
         auth_user_id = request.user.id
         offset = int(request.query_params.get("offset", 0))
         limit = int(request.query_params.get("limit", 10))
 
         try: 
-            domain_child_comments = GetChildCommentsByCommentId(CommentRepositoryImpl()).execute(auth_user_id, domain_comment, offset, limit)
+            domain_child_comments = GetChildCommentsByCommentId(CommentRepositoryImpl()).execute(auth_user_id=auth_user_id, comment_id=comment_id, offset=offset, limit=limit)
         except Exception as e:
             return self._handler_exception(e)
         

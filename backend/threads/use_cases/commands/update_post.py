@@ -18,7 +18,7 @@ class UpdatePost:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable(message=e.message)
-        except DomainValidationError as e:
+        except InvalidEntityInput as e:
             raise InvalidObject(message=e.message)
         
         try:

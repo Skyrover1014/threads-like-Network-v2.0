@@ -92,34 +92,40 @@ class CommentDetailView(CommentBaseView):
         return Response(serializers.data, status=status.HTTP_200_OK)
     
     def patch(self, request, comment_id):
-        try:
-            old_domain_comment = self._get_comment_by_id(request, comment_id)
-        except Exception as e:
-            return self._handler_exception(e)
+        # try:
+        #     old_domain_comment = self._get_comment_by_id(request, comment_id)
+        # except Exception as e:
+        #     return self._handler_exception(e)
         
-        serializers = CommentSerializer(old_domain_comment, data=request.data, partial = True)
+        serializers = CommentSerializer(data=request.data, partial = True)
         serializers.is_valid(raise_exception=True)
         new_data = serializers.validated_data
 
+        # try:
+        #     old_domain_comment.update_content(new_data.get("content", old_domain_comment.content), request.user.id)
+        # except Exception as e:
+        #     return self._handler_exception(e)
         try:
-            old_domain_comment.update_content(new_data.get("content", old_domain_comment.content), request.user.id)
+            updated = UpdateComment(CommentRepositoryImpl()).execute(user_id=request.user.id,comment_id=comment_id, new_data=new_data)
         except Exception as e:
             return self._handler_exception(e)
-        updated = UpdateComment(CommentRepositoryImpl()).execute(old_domain_comment)
         return Response(CommentSerializer(updated).data, status=status.HTTP_200_OK)
 
     def delete(self, request, comment_id):
+        # try:
+        #     target_domain_comment = self._get_comment_by_id(request, comment_id)
+        # except Exception as e:
+        #     return self._handler_exception(e)
+        
+        # try:
+        #     target_domain_comment.verify_deletable_by(request.user.id)
+        # except Exception as e:
+        #     return self._handler_exception(e)
         try:
-            target_domain_comment = self._get_comment_by_id(request, comment_id)
+            DeleteComment(CommentRepositoryImpl()).execute(request.user.id, comment_id)
         except Exception as e:
             return self._handler_exception(e)
         
-        try:
-            target_domain_comment.verify_deletable_by(request.user.id)
-        except Exception as e:
-            return self._handler_exception(e)
-        
-        DeleteComment(CommentRepositoryImpl()).execute(target_domain_comment)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
         
