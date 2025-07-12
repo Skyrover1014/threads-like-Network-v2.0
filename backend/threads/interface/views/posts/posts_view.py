@@ -20,6 +20,7 @@ from threads.interface.serializers.message_serializer import MessageSerializer
 
 
 @extend_schema_view(
+
     get=extend_schema(
         summary="取得貼文列表",
         description="支援 author_id、following 篩選，可用 offset、limit 分頁，example: urls後面寫?author_id=1&following=true&offset=0&limit=5",        
