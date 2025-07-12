@@ -1,8 +1,10 @@
 from threads.domain.repository import LikeRepository
 from threads.domain.entities import Like as DomainLike
 
-from django.db import IntegrityError, DatabaseError, OperationalError,transaction
-from threads.common.exceptions import EntityAlreadyExists, EntityOperationFailed, EntityDoesNotExist
+
+from django.db import IntegrityError, DatabaseError,transaction
+from threads.common.base_exception import DomainValidationError
+from threads.common.exceptions.repository_exceptions import EntityAlreadyExists, EntityDoesNotExist, EntityOperationFailed,InvalidEntityInput, InvalidOperation
 
 from threads.models import Post as DatabasePost
 from threads.models import LikePost as DatabaseLikePost
@@ -11,26 +13,31 @@ from threads.models import LikeComment as DatabaseLikeComment
 
 
 from typing import Optional, List, Union, Literal
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
 
 class LikeBaseRepository:
     
     def _decode_orm_like(self, db_like: Union[DatabaseLikePost, DatabaseLikeComment]) -> DomainLike:
         if isinstance(db_like, DatabaseLikePost):
-            return DomainLike(
-                id = db_like.id,
-                user_id=db_like.user.id,
-                content_item_id=db_like.post.id,
-                content_type="post"
-            )
+            try:
+                return DomainLike(
+                    id = db_like.id,
+                    user_id=db_like.user.id,
+                    content_item_id=db_like.post.id,
+                    content_type="post"
+                )
+            except DomainValidationError as e:
+                raise InvalidEntityInput(message=e.message)
         else:
-            return DomainLike(
-                id = db_like.id,
-                user_id=db_like.user.id,
-                content_item_id=db_like.comment.id,
-                content_type="comment"
-            )
+            try:
+                return DomainLike(
+                    id = db_like.id,
+                    user_id=db_like.user.id,
+                    content_item_id=db_like.comment.id,
+                    content_type="comment"
+                )
+            except DomainValidationError as e:
+                raise InvalidEntityInput(message=e.message)
     
     def check_target_content_exists(self, content_type: str, content_id:int):
         target_databases = {
@@ -46,7 +53,7 @@ class LikeBaseRepository:
         like_db = like_databases[content_type]
 
         if not target_db.objects.filter(id=content_id).exists():
-            raise EntityDoesNotExist(f"{content_type} 不存在")
+            raise EntityDoesNotExist(message=f"{content_type} 不存在")
         
     def switch_like_db(self, content_type:str):
        
@@ -60,15 +67,23 @@ class LikeBaseRepository:
         return like_model, target_field
     
     def adjust_likes_count(self, content_type:str, content_id:int, delta:int ):
+        
+       
+        if not isinstance(delta, int):
+            raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
+        
         target_databases = {
             "post": DatabasePost,
             "comment": DatabaseComment
         }
 
         model = target_databases[content_type]
-        model.objects.filter(id=content_id).update(
-            likes_count=F('likes_count') + delta    
-        )
+        try:
+            model.objects.filter(id=content_id).update(
+                likes_count=F('likes_count') + delta    
+            )
+        except DatabaseError as e:
+            raise InvalidOperation(message="錯誤的快取變動")
     
     
    
@@ -86,27 +101,26 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
         try:
             with transaction.atomic():
                 db_like = like_model.objects.create(**like_kwargs)
-                self.adjust_likes_count(like.content_type, like.content_item_id, 1)
+                self.adjust_likes_count(like.content_type, like.content_item_id,1)
         except IntegrityError:
-                raise EntityAlreadyExists("已經按讚過了")
+                raise EntityAlreadyExists(message="已經按讚過了")
         except DatabaseError :
-            raise EntityOperationFailed("資料庫操作失敗")
+            raise EntityOperationFailed(message="資料庫操作失敗")
 
         return self._decode_orm_like(db_like)
     
     def delete_like(self, like: DomainLike) -> None:
         
-        self.check_target_content_exists(like.content_type, like.content_item_id)
+        # self.check_target_content_exists(like.content_type, like.content_item_id)
         like_model, _ = self.switch_like_db(like.content_type)
 
         try:
             with transaction.atomic():
                 db_like = like_model.objects.get(id= like.id)
-                db_like.delete()
                 self.adjust_likes_count(like.content_type, like.content_item_id, -1)
-        except DatabaseError:
-            raise EntityOperationFailed("資料庫操作失敗")
-        
+                db_like.delete()
+        except DatabaseError as e:
+            raise EntityOperationFailed(message="資料庫操作失敗") 
         return None
     
     def get_like_by_id(self, user_id:int, content_id: int, content_type: Literal['post','comment']) -> Optional[DomainLike]:
@@ -121,10 +135,10 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
         
         try:
             db_like = like_model.objects.get(**like_kwargs)
-        except DatabaseLikePost.DoesNotExist:
-            raise EntityDoesNotExist(f"{content_type} Like 紀錄不存在")
+        except like_model.DoesNotExist:
+            raise EntityDoesNotExist(message=f"{content_type} Like 紀錄不存在")
         except DatabaseError :
-            raise EntityOperationFailed("資料庫操作失敗") 
+            raise EntityOperationFailed(message="資料庫操作失敗") 
 
 
         return self._decode_orm_like(db_like)

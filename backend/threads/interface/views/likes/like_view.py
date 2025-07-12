@@ -114,21 +114,11 @@ class LikeContentView(LikeBaseView):
         return Response({"message": "Liked Successfully"}, status=status.HTTP_201_CREATED)
     
     def delete (self, request, content_id, content_type):
-
         user_id = request.user.id
         try:
-            domain_like = GetLikeById(LikeRepositoryImpl()).execute(user_id, content_id, content_type)
-        except Exception as e:
-            return self._handler_exception(e)
-
-        try: 
-            domain_like.verify_deletable_by(request.user.id)
-        except Exception as e:
-            return self._handler_exception(e)
-        try:
-            delete_lke = DeleteLike(LikeRepositoryImpl()).execute(domain_like)
+            delete_lke = DeleteLike(LikeRepositoryImpl()).execute(user_id, content_id, content_type, deleter=request.user.id)
         except Exception as e:
            return self._handler_exception(e)
-        return Response({"message":"Like deleted successfully"},status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
  
         
