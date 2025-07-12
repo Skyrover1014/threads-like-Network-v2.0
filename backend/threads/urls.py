@@ -46,7 +46,7 @@ urlpatterns = [
     path('posts/<int:content_id>/like',LikeContentView.as_view(), {"content_type": "post"}),
     path('comments/<int:content_id>/like', LikeContentView.as_view(), {"content_type": "comment"}),
 
-    path('gpt/', AskGPTView.as_view(), name="test_api"),
+    # path('gpt/', AskGPTView.as_view(), name="test_api"),
     path('posts/<int:post_id>/factCheck' , PostFactCheckView.as_view(), name="post_fact_check_with_ai"),
     path('comments/<int:comment_id>/factCheck', CommentFactCheckView.as_view(), name="comment_fact_check_with_ai")
 ]

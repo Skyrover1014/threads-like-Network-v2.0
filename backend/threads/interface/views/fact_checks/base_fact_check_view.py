@@ -23,9 +23,6 @@ class FactCheckBaseView(APIView):
         elif isinstance(e, ValueError):
             return error_response(message=e, type_name="ValueError",
                                   code=status.HTTP_400_BAD_REQUEST, source="Entity.ContentItem.validate")
-        elif isinstance(e, PermissionError):
-            return error_response(message=e, type_name="PermissionError",
-                                  code=status.HTTP_403_FORBIDDEN, source="Entity.ContentItem.validate")
         else:
             return error_response(message=e, type_name=type(e).__name__, code=500)
         

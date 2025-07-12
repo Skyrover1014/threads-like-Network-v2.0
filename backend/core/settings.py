@@ -68,6 +68,9 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API for the Threads app',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'ENUM_NAME_OVERRIDES': {
+        'threads.domain.enum.ContentTypeEnum': 'UnifiedContentTypeEnum',
+    }
 }
 MIDDLEWARE = [
     'silk.middleware.SilkyMiddleware',

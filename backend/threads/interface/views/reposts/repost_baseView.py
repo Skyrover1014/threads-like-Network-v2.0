@@ -16,7 +16,6 @@ from threads.use_cases.commands.repost_content import CreateRePost
 from threads.use_cases.commands.repost_content import RepostTarget
 
 
-
 class RepostBaseView(APIView):
     def _handler_exception(self, e):
         if isinstance(e, EntityDoesNotExist):

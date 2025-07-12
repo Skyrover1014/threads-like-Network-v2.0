@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from threads.domain.enum import ContentTypeEnum
 class PostSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     author_id = serializers.IntegerField()
@@ -15,7 +15,7 @@ class PostSerializer(serializers.Serializer):
     is_repost = serializers.BooleanField()
     repost_of = serializers.IntegerField()
     repost_of_content_type = serializers.ChoiceField(
-        choices=[('post','post'),('comment','comment')],
+        choices=ContentTypeEnum,
         allow_null = True,
         required = False,
     )

@@ -12,6 +12,72 @@ from threads.use_cases.queries.get_like_by_id import GetLikeById
 from threads.use_cases.commands.create_like import CreateLike
 from threads.use_cases.commands.delete_like import DeleteLike
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.serializers.message_serializer import MessageSerializer
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="讀取單一貼文/留言的個人按讚紀錄",
+        description="可以對單一貼文/留言進行按讚或是取消按讚",        
+        responses={
+            200: OpenApiResponse(
+                description="使用者成功讀取貼文/留言按讚紀錄",
+                response=LikeSerializer
+            ),
+            404:OpenApiResponse(
+                description="欲讀取貼文/留言按讚紀錄並不存在 或是目標貼文/留言不存在",
+                response=MessageSerializer,
+            ), 
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            ) 
+        }
+    ),
+    post=extend_schema(
+        summary="按讚該貼文或留言",
+        description="無需要輸入任何參數，只需要按下 post 按鈕",
+        request=LikeSerializer,
+        examples=[OpenApiExample(name="按讚內容",value={},summary="模擬不需要輸入參數，就可按讚內容")],
+        responses={
+            201:OpenApiResponse(
+                description="使用者成功新增按讚紀錄",
+                response=MessageSerializer
+            ),
+            404:OpenApiResponse(
+                description="欲讀取貼文/留言按讚紀錄並不存在 或是目標貼文/留言不存在",
+                response=MessageSerializer,
+            ),
+            406:OpenApiResponse(
+                description="已有按讚紀錄，不可重複按讚，須先刪除按讚紀錄",
+                response=MessageSerializer,
+            ),
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            )
+        },
+    ),
+    delete=extend_schema(
+        summary="刪掉按讚紀錄",
+        responses={
+            204:None,
+            403:OpenApiResponse(
+                description="無權限刪除紀錄",
+                response=MessageSerializer,
+            ),
+            404:OpenApiResponse(
+                description="欲讀取貼文/留言按讚紀錄並不存在 或是目標貼文/留言不存在",
+                response=MessageSerializer,
+            ),
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            )
+        }
+    )
+)
+@extend_schema(tags=["Like"])
 class LikeContentView(LikeBaseView):
     permission_classes=[IsAuthenticated]
 

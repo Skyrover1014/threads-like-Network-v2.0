@@ -13,7 +13,51 @@ from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 from .base_fact_check_view import FactCheckBaseView
 
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.serializers.message_serializer import MessageSerializer
 
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="取得欲查核的貼文",
+        description="content自動攜帶，prompt選填",        
+        responses={
+            200: OpenApiResponse(
+                description="使用者成功讀取貼文",
+                response=PostSerializer
+            ),
+            404:OpenApiResponse(
+                description="欲讀取貼文並不存在",
+                response=MessageSerializer,
+            ), 
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            ) 
+        }
+    ),
+    post=extend_schema(
+        summary="撰寫事實查核Prompt（選填）",
+        description="AI會提供結果摘要，以及對應資料出處，協助使用者判斷是否為事實",
+        request=FactCheckSerializer,
+        examples=[OpenApiExample(name="撰寫查核問題",value={"content": "原留言內容","prompt":"選填想要詢問的問題"},summary="這個範例模擬使用者進行查核")],
+        responses={
+            200:OpenApiResponse(
+                description="使用者取得查核結果",
+                response=MessageSerializer
+            ),
+            400:OpenApiResponse(
+                description="缺少content，或遺失content",
+                response=MessageSerializer,
+            ), 
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            )
+        },
+    )
+)
+@extend_schema(tags=["FactCheck"])
 class PostFactCheckView(FactCheckBaseView):
     permission_classes = [IsAuthenticated]
     def get(self, request, post_id):
@@ -30,25 +74,3 @@ class PostFactCheckView(FactCheckBaseView):
 
     def post(self, request, post_id):
         return self._handler_post(request)
-
-        # serializers = FactCheckSerializer(data= request.data)
-        # serializers.is_valid(raise_exception=True)
-
-        # content = serializers.validated_data["content"]
-        # prompt = serializers.validated_data.get("prompt")
-
-        # if not content:
-        #     return Response({"error": "Missing Post or Comment"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # if not prompt:
-        #     target = content
-        # else:
-        #     target = {
-        #         "content":content,
-        #         "prompt":prompt
-        #     }
-        
-        # openai_client  = OpenAIClient()
-        # result = openai_client.fact_check(target)
-        # return Response({"response":result })
-    

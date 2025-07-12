@@ -15,19 +15,54 @@ from threads.use_cases.queries.get_all_posts import GetAllPost
 from threads.use_cases.queries.get_following_user_ids import GetFollowingUserIds
 from threads.use_cases.commands.create_post import CreatePost
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.serializers.message_serializer import MessageSerializer
 
 
-
-
+@extend_schema_view(
+    get=extend_schema(
+        summary="取得貼文列表",
+        description="支援 author_id、following 篩選，可用 offset、limit 分頁，example: urls後面寫?author_id=1&following=true&offset=0&limit=5",        
+        responses={
+            200: OpenApiResponse(
+                description="使用者成功讀取貼文列表",
+                response=PostSerializer(many=True)
+            ),
+            404:OpenApiResponse(
+                description="欲讀取列表並不存在",
+                response=MessageSerializer,
+            ), 
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            ) 
+        }
+    ),
+    post=extend_schema(
+        summary="撰寫新貼文",
+        description="只需要輸入作者id和貼文content，即可創建新貼文，貼文內容不可為白",
+        request=CreatePostSerializer,
+        examples=[OpenApiExample(name="撰寫貼文",value={"author_id":"1","content": "我想要建立貼文"},summary="這個範例模擬使用者只需要輸入 author_id 和 content 欄位，其餘欄位保留原書")],
+        responses={
+            201:OpenApiResponse(
+                description="使用者新增完貼文，導向貼文列表",
+                response=MessageSerializer
+            ),
+            400:OpenApiResponse(
+                description="欲新增貼文不符合規範",
+                response=MessageSerializer,
+            ), 
+            500:OpenApiResponse(
+                description="伺服器內部錯誤",
+                response=MessageSerializer,
+            )
+        },
+    )
+)
+@extend_schema(tags=["Posts"]) 
 class PostListCreateView(PostBaseView):
     permission_classes = [IsAuthenticated]
     
-    @extend_schema(
-        summary="取得貼文列表",
-        description="支援 author_id、following 篩選，可用 offset、limit 分頁。",
-        responses=PostSerializer(many=True)
-    )
     def get(self, request):
         auth_user_id = request.user.id
         author_id = request.query_params.get("author_id")
@@ -73,5 +108,4 @@ class PostListCreateView(PostBaseView):
         except Exception as e:
                 return self._handler_exception(e)
         
-        print(post)
-        return Response({"message": "Post created successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "Post created successfully"}, status=status.HTTP_201_CREATED)
