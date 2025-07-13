@@ -65,7 +65,6 @@ class CommentFactCheckView(FactCheckBaseView):
             return self._handler_exception(e)
         
         serializers = CommentSerializer(domain_comment)
-
         return Response(serializers.data, status=status.HTTP_200_OK)
 
 

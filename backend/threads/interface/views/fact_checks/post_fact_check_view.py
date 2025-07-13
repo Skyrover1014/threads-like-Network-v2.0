@@ -61,14 +61,12 @@ from threads.interface.serializers.message_serializer import MessageSerializer
 class PostFactCheckView(FactCheckBaseView):
     permission_classes = [IsAuthenticated]
     def get(self, request, post_id):
-        
         try:
             domain_post = GetPostById(PostRepositoryImpl()).execute(post_id, request.user.id) #不應該要 user_id
         except Exception as e:
             return self._handler_exception(e)
         
         serializers = PostSerializer(domain_post)
-
         return Response(serializers.data, status=status.HTTP_200_OK)
 
 
