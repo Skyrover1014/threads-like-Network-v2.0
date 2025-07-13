@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional, Literal
 from abc import ABC, abstractmethod
 import re
-
+from threads.common.base_exception import DomainValidationError
 
 
 @dataclass
@@ -13,23 +13,31 @@ class User:
     username: str
     email: str
     hashed_password: str = field(repr=False)
-    # created_at: datetime = field(default_factory=datetime.now)
-    # updated_at: datetime = field(default_factory=datetime.now)
+
+    followers_count: int = 0
+    followings_count: int = 0
+    posts_count: int = 0
 
     def __post_init__(self):
         self.validate_username()
         self.validate_email()
+        self.validate_counters()
+
     def validate_email(self):
         email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(email_pattern, self.email):
-            raise ValueError("無效的電子郵件地址")
+            raise DomainValidationError(message="無效的電子郵件地址")
+        
     def validate_username(self):
-        if len(self.username) < 3:
-            raise ValueError("使用者名稱必須至少3個字元")
-        if len(self.username) > 50:
-            raise ValueError("使用者名稱不能超過50個字元")
+        if len(self.username) < 5:
+            raise DomainValidationError(message="使用者名稱必須至少5個字元")
+        if len(self.username) > 15:
+            raise DomainValidationError(message="使用者名稱不能超過15個字元")
         if not self.username.isalnum():
-            raise ValueError("使用者名稱只能包含字母和數字")
+            raise DomainValidationError(message="使用者名稱只能包含英文字母和數字")
+    def validate_counters(self):
+        if self.followers_count < 0 or self.followings_count < 0 or self.posts_count < 0:
+            raise DomainValidationError(message="快取欄位不能為負數")
 
 
 @dataclass
@@ -44,7 +52,7 @@ class Follow:
 
     def validate_follow(self):
         if self.following_id == self.follower_id:
-            raise ValueError("不能關注自己")
+            raise DomainValidationError("不能關注自己")
 
 @dataclass
 class Like:
@@ -55,7 +63,17 @@ class Like:
 
     def verify_deletable_by(self, deleter):
         if self.user_id != deleter:
-           raise PermissionError("無權限刪除貼文")
+           raise DomainValidationError(message="無權限刪除按讚紀錄")
+        
+
+    def __post_init__(self):
+        self.validate_content_type()
+
+    def validate_content_type(self):
+        if self.content_type not in ['post', 'comment']:
+            raise DomainValidationError(message="無效的 content_type，必須是 'post' 或 'comment'")
+
+
 @dataclass
 class ContentItem(ABC):
     id:int
@@ -89,28 +107,28 @@ class ContentItem(ABC):
 
     def validate_content(self):
         if len(self.content) < 1:
-            raise ValueError("內容不能為空")
+            raise DomainValidationError(message="內容不能為空")
         if len(self.content) > 255:
-            raise ValueError("內容不能超過255個字元")
+            raise DomainValidationError(message="內容不能超過255個字元")
     def validate_likes_count(self):
         if self.likes_count < 0:
-            raise ValueError("喜歡數不能為負數")
+            raise DomainValidationError(message="喜歡數不能為負數")
     def validate_comments_count(self):
         if self.comments_count < 0:
-            raise ValueError("評論數不能為負數")
+            raise DomainValidationError(message="評論數不能為負數")
     def validate_reposts_count(self):   
         if self.reposts_count < 0:
-            raise ValueError("轉發數不能為負數")
+            raise DomainValidationError(message="轉發數不能為負數")
 
     def update_content(self, new_content, editor_id):
         if self.author_id != editor_id:
-            raise PermissionError("無權限修改貼文")
+            raise DomainValidationError(message="無權限修改貼文")
         self.content = new_content
         self.updated_at = datetime.now()
     
     def verify_deletable_by(self, deleter):
         if self.author_id != deleter:
-           raise PermissionError("無權限刪除貼文")
+           raise DomainValidationError(message="無權限刪除貼文")
          
 @dataclass
 class Post(ContentItem):

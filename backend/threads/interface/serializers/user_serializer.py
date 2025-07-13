@@ -2,9 +2,12 @@ from rest_framework import serializers
 
 
 class UserSerializer(serializers.Serializer):
-   id = serializers.IntegerField()
-   username = serializers.CharField()
-   email = serializers.EmailField()
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    followers_count=serializers.IntegerField()
+    followings_count=serializers.IntegerField()
+    posts_count=serializers.IntegerField()
    
 
 class RegisterUserSerializer(serializers.Serializer):
