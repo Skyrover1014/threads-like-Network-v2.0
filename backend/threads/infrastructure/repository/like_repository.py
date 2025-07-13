@@ -48,7 +48,6 @@ class LikeBaseRepository:
             "post": DatabaseLikePost,
             "comment": DatabaseLikeComment
         }
-
         target_db = target_databases[content_type]
         like_db = like_databases[content_type]
 
@@ -56,27 +55,21 @@ class LikeBaseRepository:
             raise EntityDoesNotExist(message=f"{content_type} 不存在")
         
     def switch_like_db(self, content_type:str):
-       
         like_model_map = {
             "post": (DatabaseLikePost, "post_id"),
             "comment": (DatabaseLikeComment, "comment_id")
         }
-
         like_model, target_field = like_model_map[content_type]
-
         return like_model, target_field
     
     def adjust_likes_count(self, content_type:str, content_id:int, delta:int ):
-        
-       
         if not isinstance(delta, int):
             raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
-        
+    
         target_databases = {
             "post": DatabasePost,
             "comment": DatabaseComment
         }
-
         model = target_databases[content_type]
         try:
             model.objects.filter(id=content_id).update(
@@ -90,7 +83,6 @@ class LikeBaseRepository:
 
 class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
     def create_like(self, like: DomainLike) -> DomainLike:
-
         self.check_target_content_exists(like.content_type, like.content_item_id)
         
         like_model, target_field  = self.switch_like_db(like.content_type)
@@ -110,8 +102,6 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
         return self._decode_orm_like(db_like)
     
     def delete_like(self, like: DomainLike) -> None:
-        
-        # self.check_target_content_exists(like.content_type, like.content_item_id)
         like_model, _ = self.switch_like_db(like.content_type)
 
         try:
@@ -124,7 +114,6 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
         return None
     
     def get_like_by_id(self, user_id:int, content_id: int, content_type: Literal['post','comment']) -> Optional[DomainLike]:
-       
         self.check_target_content_exists(content_type, content_id)
         
         like_model, target_field = self.switch_like_db(content_type)
@@ -132,15 +121,12 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
             "user_id": user_id,
             target_field: content_id
         }
-        
         try:
             db_like = like_model.objects.get(**like_kwargs)
         except like_model.DoesNotExist:
             raise EntityDoesNotExist(message=f"{content_type} Like 紀錄不存在")
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗") 
-
-
         return self._decode_orm_like(db_like)
     
 
