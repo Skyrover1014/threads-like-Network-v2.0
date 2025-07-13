@@ -9,9 +9,9 @@ class CreatePost:
     def __init__(self, post_repository: PostRepository):
         self.post_repository = post_repository
     
-    def execute(self, author_id:int, content:str ) -> DomainPost:
+    def execute(self, author_id:int, author_name:str, content:str ) -> DomainPost:
         try:
-            new_post = DomainPost(id=None, author_id=author_id, content=content)
+            new_post = DomainPost(id=None, author_id=author_id, author_name=author_name, content=content)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
         try:

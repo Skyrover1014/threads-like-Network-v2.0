@@ -102,10 +102,11 @@ class PostListCreateView(PostBaseView):
         serializers.is_valid(raise_exception=True)
        
         author_id = serializers.validated_data["author_id"]
+        author_name = serializers.validated_data["author_name"]
         content = serializers.validated_data["content"]
 
         try:
-            post = CreatePost(PostRepositoryImpl()).execute(author_id,content)
+            post = CreatePost(PostRepositoryImpl()).execute(author_id, author_name, content)
         except Exception as e:
                 return self._handler_exception(e)
         

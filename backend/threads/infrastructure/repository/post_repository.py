@@ -81,9 +81,14 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
     #組裝Home-Page貼文列表
     def get_all_posts(self,auth_user_id:int ,offset:int ,limit:int) -> List[DomainPost]:
         try:
-            db_posts = DatabasePost.objects.select_related("author").annotate(
-                is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
-            ).order_by('created_at')[offset:offset+limit]
+            db_posts = (
+                DatabasePost.objects
+                .select_related("author")
+                .annotate(
+                    is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
+                )
+                .order_by('created_at')[offset:offset+limit]
+            ) 
         except DatabaseError:
             raise EntityOperationFailed(message="資料庫操作失敗")
         except InvalidEntityInput as e:

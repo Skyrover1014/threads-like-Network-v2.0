@@ -11,7 +11,5 @@ class GetFollowingUserIds:
     def execute(self,auth_user_id:int) -> List[int]:
         try:
             return self.user_repository.get_following_user_ids(auth_user_id)
-        # except EntityDoesNotExist as e:
-        #     raise NotFound(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable

@@ -31,4 +31,5 @@ class PostSerializer(serializers.Serializer):
 
 class CreatePostSerializer(serializers.Serializer):
     author_id = serializers.IntegerField()
+    author_name = serializers.CharField()  # ✅ 新增這行
     content = serializers.CharField()
