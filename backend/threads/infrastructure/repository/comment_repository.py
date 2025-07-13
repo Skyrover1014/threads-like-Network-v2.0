@@ -135,24 +135,29 @@ class CommentRepositoryImpl(CommentRepository, ContentBaseRepository):
             repost_of_content_type = self.get_content_type_from_literal(comment.repost_of_content_type)
         except ValueError as e:
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
+       
         with transaction.atomic():
-            try:
-                db_comment = DatabaseComment.objects.create(
-                    author_id=comment.author_id,
-                    content=comment.content,
-                    is_repost= comment.is_repost,
-                    repost_of_content_type= repost_of_content_type,
-                    repost_of_content_item_id= comment.repost_of,
-                    parent_post_id=comment.parent_post_id,
-                    parent_comment_id = comment.parent_comment_id
-                )
-            except DatabaseComment.DoesNotExist:
-                raise EntityDoesNotExist(message="轉發的留言不存在")
-            except DatabaseError:
-                raise EntityOperationFailed(message="資料庫操作失敗")
+            db_comment = DatabaseComment.objects.create(
+                author_id=comment.author_id,
+                content=comment.content,
+                is_repost= comment.is_repost,
+                repost_of_content_type= repost_of_content_type,
+                repost_of_content_item_id= comment.repost_of,
+                parent_post_id=comment.parent_post_id,
+                parent_comment_id = comment.parent_comment_id
+            )
             
-            self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta=1)
-            self.adjust_comments_count(parent_post_id=comment.parent_post_id, parent_comment_id=comment.parent_comment_id, delta= 1)
+            try:
+                self.adjust_comments_count(parent_post_id=comment.parent_post_id, parent_comment_id=comment.parent_comment_id, delta= 1)
+            except InvalidEntityInput as e:
+                raise
+
+            try:
+                self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta=1)
+            except InvalidEntityInput as e:
+                raise
+            except InvalidOperation as e:
+                raise
         try:
             return self._decode_orm_comment(db_comment)
         except InvalidEntityInput as e:

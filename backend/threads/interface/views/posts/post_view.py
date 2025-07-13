@@ -93,32 +93,20 @@ class PostDetailView(PostBaseView):
         return Response(serializers.data, status=status.HTTP_200_OK)
     
     def patch(self, request, post_id):
-        try:
-            old_domain_post = self._get_post_by_id(request, post_id)
-        except Exception as e:
-            return self.handler_exception(e)
         
-        serializers = PostSerializer(old_domain_post, data=request.data, partial = True)
+        serializers = PostSerializer(data=request.data, partial = True)
         serializers.is_valid(raise_exception=True)
         data = serializers.validated_data
 
         try:
-            old_domain_post.update_content(data.get("content",old_domain_post.content), request.user.id)
+            updated = UpdatePost(PostRepositoryImpl()).execute(post_id, data, request.user.id)
         except Exception as e:
             return self._handler_exception(e)
-        
-        updated = UpdatePost(PostRepositoryImpl()).execute(old_domain_post)
         return Response(PostSerializer(updated).data, status=status.HTTP_206_PARTIAL_CONTENT)
     
     def delete(self, request, post_id):
         try:
-            target_domain_post = self._get_post_by_id(request, post_id) 
-        except Exception as e:
-            return self._handler_exception(e) 
-        try: 
-            target_domain_post.verify_deletable_by(request.user.id)
+            DeletePost(PostRepositoryImpl()).execute(user_id=request.user.id, post_id=post_id)
         except Exception as e:
             return self._handler_exception(e)
-
-        DeletePost(PostRepositoryImpl()).execute(target_domain_post)
         return Response(status=status.HTTP_204_NO_CONTENT)

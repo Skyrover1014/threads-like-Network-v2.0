@@ -6,7 +6,6 @@ from threads.models import User as DatabaseUser
 from threads.models import Comment as DatabaseComment
 from threads.infrastructure.repository.content_base_repository import ContentBaseRepository
 
-from threads.common.base_exception import DomainValidationError
 from threads.common.exceptions.repository_exceptions import EntityDoesNotExist, EntityOperationFailed, InvalidEntityInput, InvalidOperation
 
 from django.db import DatabaseError,transaction
@@ -42,6 +41,7 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise EntityOperationFailed(message="資料庫操作失敗")
         except EntityOperationFailed as e:
             raise
+        
         try:
             return self._decode_orm_post(db_post)
         except InvalidEntityInput as e:
@@ -137,24 +137,20 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
         
         with transaction.atomic():
-            try:
-                db_post = DatabasePost.objects.create(
-                    author_id=post.author_id,
-                    content=post.content,
-                    is_repost= post.is_repost,
-                    repost_of_content_type= repost_of_content_type,
-                    repost_of_content_item_id= post.repost_of
+            db_post = DatabasePost.objects.create(
+                author_id=post.author_id,
+                content=post.content,
+                is_repost= post.is_repost,
+                repost_of_content_type= repost_of_content_type,
+                repost_of_content_item_id= post.repost_of
                 )
-            except DatabasePost.DoesNotExist:
-                raise EntityDoesNotExist(message="轉發的貼文不存在")
-            except DatabaseError :
-                raise EntityOperationFailed(message="資料庫操作失敗")
             try:
                 self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= 1)
             except InvalidEntityInput as e:
                 raise
             except InvalidOperation as e:
                 raise
+            
         try:
             return self._decode_orm_post(db_post)
         except InvalidEntityInput as e:

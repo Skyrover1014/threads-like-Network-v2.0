@@ -39,6 +39,9 @@ class UserDetailView(UserBaseView):
     permission_classes = [AllowAny]
 
     def get(self, request, user_id):
-        domain_user = GetUserProfile(UserRepositoryImpl()).execute(user_id)
-        serializers = UserSerializer(domain_user)
+        try:
+            domain_user = GetUserProfile(UserRepositoryImpl()).execute(user_id)
+            serializers = UserSerializer(domain_user)
+        except Exception as e:
+            return self._handler_exception(e)
         return Response(serializers.data, status=status.HTTP_200_OK)
