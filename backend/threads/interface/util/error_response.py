@@ -5,7 +5,7 @@ def error_response(message, type_name ="Unknown Error", code = 500, source="unkn
         "error": {
             "type": type_name,
             "message": str(message),
-            "code":code,
-            "source":source,
+            "code":code
         }
     }, status=code)
+
