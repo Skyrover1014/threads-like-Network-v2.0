@@ -81,7 +81,7 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
     #組裝Home-Page貼文列表
     def get_all_posts(self,auth_user_id:int ,offset:int ,limit:int) -> List[DomainPost]:
         try:
-            db_posts = DatabasePost.objects.all().annotate(
+            db_posts = DatabasePost.objects.select_related("author").annotate(
                 is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
             ).order_by('created_at')[offset:offset+limit]
         except DatabaseError:
@@ -98,9 +98,14 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
         if not DatabaseUser.objects.filter(id=author_id).exists():
             raise EntityDoesNotExist(message="作者不存在")
         try:
-            db_posts = DatabasePost.objects.filter(author=author_id).annotate(
-                is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
-            ).order_by('created_at')[offset:offset+limit]
+            db_posts = (
+                DatabasePost.objects
+                .filter(author=author_id)
+                .select_related("author")
+                .annotate(
+                    is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
+                ).order_by('created_at')[offset:offset+limit]
+            )
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗")
         except InvalidEntityInput as e:
@@ -116,9 +121,15 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
         if not following_ids:
             return []
         try:
-            db_posts = DatabasePost.objects.filter(author__in=following_ids).annotate(
-                is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
-            ).order_by('created_at')[offset:offset+limit]
+            db_posts =(
+                DatabasePost.objects
+                .filter(author__in=following_ids)
+                .select_related("author")
+                .annotate(
+                    is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
+                )
+                .order_by('created_at')[offset:offset+limit]
+            )
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗")
         except InvalidEntityInput as e:
