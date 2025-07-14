@@ -59,8 +59,13 @@ jobs:
             pg_isready -h 127.0.0.1 -p 5432 && echo "Postgres is ready" && break
             echo "Waiting for postgres..." && sleep 2
           done
-
-      - name: Run DB migrate
+      
+      - name: Fake all unapplied migrations
         run: |
+          cd backend
+          poetry run python manage.py migrate --fake
+
+      - name: Run remaining migrations (should be none left)
+        run: |
+          cd backend
           poetry run python manage.py migrate
-        working-directory: ./backend
