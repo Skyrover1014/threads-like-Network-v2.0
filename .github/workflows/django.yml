@@ -50,7 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install
+          poetry install --no-root
         working-directory: ./backend
 
       - name: Run DB migrate
