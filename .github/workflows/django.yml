@@ -60,17 +60,7 @@ jobs:
             echo "Waiting for postgres..." && sleep 2
           done
       
-      - name: Fake initial migrations
+      - name: Run migrations
         run: |
-          poetry run python manage.py migrate --fake-initial
-        working-directory: ./backend
-
-      - name: Fake migration 0002
-        run: |
-          poetry run python manage.py migrate threads 0002_user_followers_count_user_followings_count_and_more --fake
-        working-directory: ./backend
-
-      - name: Run remaining migrations (should be none left)
-        run: |
-          cd backend
           poetry run python manage.py migrate
+        working-directory: ./backend
