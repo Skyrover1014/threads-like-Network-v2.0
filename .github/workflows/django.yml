@@ -51,7 +51,9 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+        working-directory: ./backend
 
       - name: Run DB migrate
         run: |
           poetry run python manage.py migrate
+        working-directory: ./backend
