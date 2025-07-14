@@ -52,6 +52,13 @@ jobs:
         run: |
           poetry install --no-root
         working-directory: ./backend
+      
+      - name: Wait for PostgreSQL
+        run: |
+          for i in {1..10}; do
+            pg_isready -h postgres -p 5432 && echo "Postgres is ready" && break
+            echo "Waiting for postgres..." && sleep 2
+          done
 
       - name: Run DB migrate
         run: |
