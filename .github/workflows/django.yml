@@ -66,9 +66,9 @@ jobs:
         working-directory: ./backend
 
       - name: Fake migration 0002
-      run: |
-        poetry run python manage.py migrate threads 0002_user_followers_count_user_followings_count_and_more --fake
-      working-directory: ./backend
+        run: |
+          poetry run python manage.py migrate threads 0002_user_followers_count_user_followings_count_and_more --fake
+        working-directory: ./backend
 
       - name: Run remaining migrations (should be none left)
         run: |
