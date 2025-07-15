@@ -69,3 +69,8 @@ jobs:
         run: |
           PYTHONPATH=. poetry run pytest tests/
         working-directory: ./backend
+
+      - name: Build Docker image
+        run: |
+          docker build -t threads-backend:latest .
+        working-directory: ./backend
