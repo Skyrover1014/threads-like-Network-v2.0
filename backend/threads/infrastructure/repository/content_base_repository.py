@@ -27,7 +27,7 @@ class ContentBaseRepository:
             return DomainPost(
                 id=db_post.id,
                 author_id=db_post.author_id,
-                author_name=db_post.author.username,
+                # author_name=db_post.author.username,
                 content=db_post.content,
                 created_at=db_post.created_at,
                 updated_at=db_post.updated_at,

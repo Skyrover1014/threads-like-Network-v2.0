@@ -3,7 +3,7 @@ from threads.domain.enum import ContentTypeEnum
 class PostSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     author_id = serializers.IntegerField()
-    author_name = serializers.CharField()
+    # author_name = serializers.CharField()
     content = serializers.CharField()
     created_at = serializers.DateTimeField(read_only=True, format="%Y-%m-%dT%H:%M:%S")    
     updated_at = serializers.DateTimeField(read_only=True, format="%Y-%m-%dT%H:%M:%S")

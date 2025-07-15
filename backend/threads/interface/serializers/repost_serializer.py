@@ -6,8 +6,8 @@ class RepostSerializer(serializers.Serializer):
     author_id = serializers.IntegerField()
     content = serializers.CharField()
     target_type = serializers.ChoiceField(
-        # choices=[('post','post'),('comment','comment')],
-        choices=ContentTypeEnum
+        choices=[('post','post'),('comment','comment')],
+        # choices=ContentTypeEnum
     )
     target_post = serializers.IntegerField(allow_null=True, required = False)
     target_comment = serializers.IntegerField(allow_null=True, required = False)

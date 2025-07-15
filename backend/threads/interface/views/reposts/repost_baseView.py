@@ -17,6 +17,9 @@ from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 from threads.use_cases.commands.repost_content import CreateRePost
 from threads.use_cases.commands.repost_content import RepostTarget
 
+import traceback
+
+
 
 class RepostBaseView(APIView):
     # def _handler_exception(self, e):
@@ -44,11 +47,18 @@ class RepostBaseView(APIView):
             return error_response(message=str(e), type_name="ValueError",
                 code=status.HTTP_400_BAD_REQUEST
             )
+        # else:
+        #     return error_response(
+        #         message="系統內部錯誤，請稍後再試", type_name=type(e).__name__,
+        #         code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        #     )
         else:
+            print("[Unhandled Exception]:", traceback.format_exc())
             return error_response(
-                message="系統內部錯誤，請稍後再試", type_name=type(e).__name__,
+                message="系統內部錯誤，請稍後再試",
+                type_name=type(e).__name__,
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+             )
 
     def _get_status(self, e):
         if isinstance(e, InvalidObject):

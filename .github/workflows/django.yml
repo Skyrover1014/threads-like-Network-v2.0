@@ -64,3 +64,8 @@ jobs:
         run: |
           poetry run python manage.py migrate
         working-directory: ./backend
+
+      - name: Run unit tests
+        run: |
+          PYTHONPATH=. poetry run pytest tests/
+        working-directory: ./backend
