@@ -110,23 +110,11 @@ class UserRepositoryImpl(UserRepository):
     #         raise EntityOperationFailed(message="資料庫操作失敗", source="[Database_User]") 
 
     def get_following_user_ids(self, user_id: int) -> List[int]:
-        # try:
-        #     db_user = DatabaseUser.objects.get(id=user_id)
-        # except DatabaseUser.DoesNotExist:
-        #     raise EntityDoesNotExist(message="使用者不存在")
-        # except DatabaseError :
-        #     raise EntityOperationFailed(message="資料庫操作失敗") 
         try:
-            following_ids = (
-                DatabaseUser.objects
-                .filter(id=user_id)
-                .values_list("followings__id", flat=True)
-            )
+            db_user = DatabaseUser.objects.get(id=user_id)
+            following_ids = db_user.followings.values_list("following_id", flat=True)       
         except DatabaseError as e:
-            raise EntityOperationFailed(message="資料庫操作雌拜")
-        
-        # followings = db_user.followings.all()
-        # following_ids = followings.values_list("following_id", flat=True)
+            raise EntityOperationFailed(message="資料庫操作失敗")
         return list(following_ids)
 
 

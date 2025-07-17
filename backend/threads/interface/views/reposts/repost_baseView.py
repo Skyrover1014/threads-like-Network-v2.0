@@ -22,22 +22,6 @@ import traceback
 
 
 class RepostBaseView(APIView):
-    # def _handler_exception(self, e):
-    #     if isinstance(e, EntityDoesNotExist):
-    #         return error_response(message=e, type_name="EntityDoesNotExist", 
-    #                               code=status.HTTP_404_NOT_FOUND, source="PostRepositoryImpl.get_post_by_id")
-    #     elif isinstance(e, EntityOperationFailed):
-    #         return error_response(message=e, type_name="EntityOperationFailed",
-    #                               code=status.HTTP_500_INTERNAL_SERVER_ERROR, source="Model.Comment")
-    #     elif isinstance(e, ValueError):
-    #         return error_response(message=e, type_name="ValueError",
-    #                               code=status.HTTP_400_BAD_REQUEST, source="Entity.ContentItem.validate")
-    #     elif isinstance(e, PermissionError):
-    #         return error_response(message=e, type_name="PermissionError",
-    #                               code=status.HTTP_403_FORBIDDEN, source="Entity.ContentItem.validate")
-    #     else:
-    #         return error_response(message=e, type_name=type(e).__name__, code=500)
-    
     def _handler_exception(self, e):
         if isinstance(e, BaseAppException):
             response_data = e.to_response()
@@ -47,18 +31,18 @@ class RepostBaseView(APIView):
             return error_response(message=str(e), type_name="ValueError",
                 code=status.HTTP_400_BAD_REQUEST
             )
-        # else:
-        #     return error_response(
-        #         message="系統內部錯誤，請稍後再試", type_name=type(e).__name__,
-        #         code=status.HTTP_500_INTERNAL_SERVER_ERROR
-        #     )
         else:
-            print("[Unhandled Exception]:", traceback.format_exc())
             return error_response(
-                message="系統內部錯誤，請稍後再試",
-                type_name=type(e).__name__,
+                message="系統內部錯誤，請稍後再試", type_name=type(e).__name__,
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR
-             )
+            )
+        # else:
+        #     print("[Unhandled Exception]:", traceback.format_exc())
+        #     return error_response(
+        #         message="系統內部錯誤，請稍後再試",
+        #         type_name=type(e).__name__,
+        #         code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        #      )
 
     def _get_status(self, e):
         if isinstance(e, InvalidObject):

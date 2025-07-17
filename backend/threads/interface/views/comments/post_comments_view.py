@@ -89,8 +89,7 @@ class CommentListCreateView(CommentBaseView):
             domain_comments = GetCommentsByPostId(repo).execute(auth_user_id, post_id, offset, limit)
         except Exception as e:
             return self._handler_exception(e)
-        
-        
+          
         serializers = CommentSerializer(domain_comments, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)
     

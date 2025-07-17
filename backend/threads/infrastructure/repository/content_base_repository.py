@@ -21,6 +21,32 @@ from functools import lru_cache
 
 
 class ContentBaseRepository:
+    CONTENT_TYPE_LITERALS = {
+        "post": ContentType.objects.get_for_model(DatabasePost),
+        "comment": ContentType.objects.get_for_model(DatabaseComment)
+    }
+
+    CONTENT_TYPE_IDS = {
+        ContentType.objects.get_for_model(DatabasePost).id: "post",
+        ContentType.objects.get_for_model(DatabaseComment).id: "comment"
+    }
+
+
+    @staticmethod
+    @lru_cache(maxsize=8)
+    def get_content_type_from_ids(content_type_id:int) -> ContentType:
+        try:
+            return ContentBaseRepository.CONTENT_TYPE_IDS[content_type_id]
+        except KeyError:
+            raise InvalidEntityInput(f"找不到 ContentType，id={content_type_id}")
+    
+    @staticmethod
+    @lru_cache(maxsize=8)
+    def get_content_type_from_literal(content_type_literal:str) -> ContentType:
+        try:
+            return ContentBaseRepository.CONTENT_TYPE_LITERALS[content_type_literal]
+        except KeyError:
+            raise ValueError("不支援的ContentType")
 
     def _decode_orm_post(self, db_post:DatabasePost) -> DomainPost:
         try:
@@ -36,10 +62,10 @@ class ContentBaseRepository:
                 reposts_count=db_post.reposts_count,
                 is_repost=db_post.is_repost,
                 repost_of=db_post.repost_of_content_item_id,
-                # repost_of_content_type= (
-                #     db_post.repost_of_content_type.model if db_post.repost_of_content_type else None
-                # ),
-                repost_of_content_type = db_post.repost_of_content_type_id,
+                repost_of_content_type=(
+                    self.get_content_type_from_ids(db_post.repost_of_content_type_id)
+                    if db_post.is_repost == True else None
+                ),
                 is_liked = getattr(db_post, 'is_liked', False)
             )
         except DomainValidationError as e:
@@ -61,11 +87,10 @@ class ContentBaseRepository:
                 reposts_count=db_comment.reposts_count,
                 is_repost=db_comment.is_repost,
                 repost_of=db_comment.repost_of_content_item_id,
-                # repost_of_content_type=(
-                #     db_comment.repost_of_content_type.model
-                #     if db_comment.repost_of_content_type else None
-                # ),
-                repost_of_content_type= db_comment.repost_of_content_type_id,
+                repost_of_content_type=(
+                    self.get_content_type_from_ids(db_comment.repost_of_content_type_id)
+                    if db_comment.is_repost == True else None
+                ),
                 parent_post_id=db_comment.parent_post.id,
                 parent_comment_id=db_comment.parent_comment.id if db_comment.parent_comment else None,
                 is_liked = getattr(db_comment, 'is_liked', False)
@@ -75,20 +100,6 @@ class ContentBaseRepository:
         except TypeError as e:
             raise InvalidEntityInput(message=f"封裝 Comment 失敗: {str(e)}")
     
-    @staticmethod
-    @lru_cache(maxsize=8)
-    def get_content_type_from_literal(content_type_literal:str) -> ContentType:
-        mapping ={
-            "post":DatabasePost,
-            "comment":DatabaseComment
-        }
-        model = mapping.get(content_type_literal)
-        if model is None:
-            raise ValueError("不支援的ContentType")
-        return ContentType.objects.get_for_model(model)
-
-
-
     def adjust_reposts_count(self, repost_of: int, repost_of_content_type:int, delta:int):
         if not isinstance(delta, int):
             raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
@@ -98,11 +109,6 @@ class ContentBaseRepository:
             "comment": DatabaseComment
         }
 
-        # content_type_map = {
-        #     4: "comment",
-        #     2: "post"
-        # }
-        # print(f"轉發類型1{repost_of_content_type}",flush=True)
         model = databases.get(repost_of_content_type)
         print(f"轉發類型2{model}",flush=True)
         

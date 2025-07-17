@@ -102,7 +102,6 @@ class PostListCreateView(PostBaseView):
         serializers.is_valid(raise_exception=True)
        
         author_id = serializers.validated_data["author_id"]
-        # author_name = serializers.validated_data["author_name"]
         content = serializers.validated_data["content"]
 
         try:

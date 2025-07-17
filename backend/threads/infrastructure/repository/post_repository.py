@@ -130,6 +130,7 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
 
         if not following_ids:
             return []
+        print(f"追蹤對象{following_ids}", flush=True)
         try:
             db_posts =(
                 DatabasePost.objects
