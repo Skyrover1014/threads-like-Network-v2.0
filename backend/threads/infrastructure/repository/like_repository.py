@@ -28,6 +28,8 @@ class LikeBaseRepository:
                 )
             except DomainValidationError as e:
                 raise InvalidEntityInput(message=e.message)
+            except TypeError as e:
+                raise InvalidEntityInput(message=f"封裝 Like 失敗: {str(e)}")
         else:
             try:
                 return DomainLike(
@@ -38,6 +40,8 @@ class LikeBaseRepository:
                 )
             except DomainValidationError as e:
                 raise InvalidEntityInput(message=e.message)
+            except TypeError as e:
+                raise InvalidEntityInput(message=f"封裝 Like 失敗: {str(e)}")
     
     def check_target_content_exists(self, content_type: str, content_id:int):
         target_databases = {
@@ -71,6 +75,10 @@ class LikeBaseRepository:
             "comment": DatabaseComment
         }
         model = target_databases[content_type]
+        
+        if model is None:
+            raise InvalidEntityInput(message="不支援的內容類型")
+        
         try:
             model.objects.filter(id=content_id).update(
                 likes_count=F('likes_count') + delta    
@@ -83,8 +91,11 @@ class LikeBaseRepository:
 
 class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
     def create_like(self, like: DomainLike) -> DomainLike:
-        self.check_target_content_exists(like.content_type, like.content_item_id)
-        
+        try:
+            self.check_target_content_exists(like.content_type, like.content_item_id)
+        except EntityDoesNotExist as e:
+            raise
+
         like_model, target_field  = self.switch_like_db(like.content_type)
         like_kwargs = {
             "user_id":like.user_id,
@@ -98,8 +109,15 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
                 raise EntityAlreadyExists(message="已經按讚過了")
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗")
-
-        return self._decode_orm_like(db_like)
+        except InvalidEntityInput as e:
+            raise
+        except InvalidOperation as e:
+            raise
+       
+        try:
+            return self._decode_orm_like(db_like)
+        except InvalidEntityInput as e:
+            raise
     
     def delete_like(self, like: DomainLike) -> None:
         like_model, _ = self.switch_like_db(like.content_type)
@@ -110,11 +128,19 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
                 self.adjust_likes_count(like.content_type, like.content_item_id, -1)
                 db_like.delete()
         except DatabaseError as e:
-            raise EntityOperationFailed(message="資料庫操作失敗") 
+            raise EntityOperationFailed(message="資料庫操作失敗")
+        except InvalidEntityInput as e:
+            raise
+        except InvalidOperation as e:
+            raise
+
         return None
     
     def get_like_by_id(self, user_id:int, content_id: int, content_type: Literal['post','comment']) -> Optional[DomainLike]:
-        self.check_target_content_exists(content_type, content_id)
+        try:
+            self.check_target_content_exists(content_type, content_id)
+        except EntityDoesNotExist as e:
+            raise
         
         like_model, target_field = self.switch_like_db(content_type)
         like_kwargs = {
@@ -127,7 +153,10 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
             raise EntityDoesNotExist(message=f"{content_type} Like 紀錄不存在")
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗") 
-        return self._decode_orm_like(db_like)
+        try:
+            return self._decode_orm_like(db_like)
+        except InvalidEntityInput as e:
+            raise
     
 
         

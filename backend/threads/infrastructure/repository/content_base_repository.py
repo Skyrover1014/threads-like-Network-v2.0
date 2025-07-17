@@ -27,7 +27,7 @@ class ContentBaseRepository:
             return DomainPost(
                 id=db_post.id,
                 author_id=db_post.author_id,
-                # author_name=db_post.author.username,
+                author_name=db_post.author.username,
                 content=db_post.content,
                 created_at=db_post.created_at,
                 updated_at=db_post.updated_at,
@@ -44,12 +44,15 @@ class ContentBaseRepository:
             )
         except DomainValidationError as e:
             raise InvalidEntityInput(message="Post 資料不符合規則")
+        except TypeError as e:
+            raise InvalidEntityInput(message=f"封裝 Post 失敗: {str(e)}")
     
     def _decode_orm_comment(self, db_comment:DatabaseComment) -> DomainComment:
         try:
             return DomainComment(
                 id=db_comment.id,
                 author_id=db_comment.author_id,
+                author_name=db_comment.author.username,
                 content=db_comment.content,
                 created_at=db_comment.created_at,
                 updated_at=db_comment.updated_at,
@@ -69,6 +72,8 @@ class ContentBaseRepository:
             )
         except DomainValidationError as e:
             raise InvalidEntityInput(message="Comment 資料不符合規則")
+        except TypeError as e:
+            raise InvalidEntityInput(message=f"封裝 Comment 失敗: {str(e)}")
     
     @staticmethod
     @lru_cache(maxsize=8)
@@ -84,7 +89,7 @@ class ContentBaseRepository:
 
 
 
-    def adjust_reposts_count(self, repost_of: int, repost_of_content_type:str, delta:int):
+    def adjust_reposts_count(self, repost_of: int, repost_of_content_type:int, delta:int):
         if not isinstance(delta, int):
             raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
         
@@ -92,8 +97,15 @@ class ContentBaseRepository:
             "post": DatabasePost,
             "comment": DatabaseComment
         }
-        
+
+        # content_type_map = {
+        #     4: "comment",
+        #     2: "post"
+        # }
+        # print(f"轉發類型1{repost_of_content_type}",flush=True)
         model = databases.get(repost_of_content_type)
+        print(f"轉發類型2{model}",flush=True)
+        
         if model is None:
             raise InvalidEntityInput(message="不支援的轉發來源類型")
         try:

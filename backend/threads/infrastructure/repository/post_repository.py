@@ -15,8 +15,8 @@ from typing import Optional, List
 class PostRepositoryImpl(PostRepository, ContentBaseRepository):
     #基本創建貼文、更新貼文和刪除貼文
     def create_post(self, post: DomainPost) -> DomainPost:
-        if not DatabaseUser.objects.filter(id=post.author_id).exists():
-            raise EntityDoesNotExist(message="使用者不存在")
+        # if not DatabaseUser.objects.filter(id=post.author_id).exists():
+        #     raise EntityDoesNotExist(message="使用者不存在")
         try:
             db_post = DatabasePost.objects.create(
                 author_id=post.author_id,
@@ -41,7 +41,9 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise EntityOperationFailed(message="資料庫操作失敗")
         except EntityOperationFailed as e:
             raise
-        
+        except InvalidEntityInput as e:
+            raise
+
         try:
             return self._decode_orm_post(db_post)
         except InvalidEntityInput as e:
@@ -70,6 +72,9 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
                     self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= -1)
                 except InvalidOperation as e:
                     raise
+                except InvalidEntityInput as e:
+                    raise
+
             db_post = DatabasePost.objects.get(id=post.id)
             try:
                 db_post.delete()
@@ -153,13 +158,16 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
         
         with transaction.atomic():
-            db_post = DatabasePost.objects.create(
-                author_id=post.author_id,
-                content=post.content,
-                is_repost= post.is_repost,
-                repost_of_content_type= repost_of_content_type,
-                repost_of_content_item_id= post.repost_of
-                )
+            try:
+                db_post = DatabasePost.objects.create(
+                    author_id=post.author_id,
+                    content=post.content,
+                    is_repost= post.is_repost,
+                    repost_of_content_type= repost_of_content_type,
+                    repost_of_content_item_id= post.repost_of
+                    )
+            except DatabaseError as e:
+                raise EntityOperationFailed(message="資料庫操作失敗")
             try:
                 self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= 1)
             except InvalidEntityInput as e:

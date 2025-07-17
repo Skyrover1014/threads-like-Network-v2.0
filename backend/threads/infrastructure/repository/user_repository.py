@@ -17,17 +17,16 @@ class UserRepositoryImpl(UserRepository):
                 username=user.username,
                 email=user.email,
                 hashed_password=user.hashed_password
-            )
-        
+            ) 
         except IntegrityError as e:
             err_msg = str(e)
             if "username" in err_msg:
                 raise EntityAlreadyExists(message="使用者名稱已存在")
             elif "email" in err_msg:
                 raise EntityAlreadyExists(message="電子郵件已存在")
-       
         except DatabaseError as e:
             raise EntityOperationFailed(message="資料庫操作失敗")
+       
         try:
             return self._decode_orm_user(db_user)
         except InvalidEntityInput as e:
@@ -40,6 +39,7 @@ class UserRepositoryImpl(UserRepository):
             raise EntityDoesNotExist(message="使用者不存在")
         except DatabaseError as e :
             raise EntityOperationFailed(message="資料庫操作失敗")
+        
         try:
             return self._decode_orm_user(db_user)
         except InvalidEntityInput as e:
@@ -116,12 +116,14 @@ class UserRepositoryImpl(UserRepository):
         #     raise EntityDoesNotExist(message="使用者不存在")
         # except DatabaseError :
         #     raise EntityOperationFailed(message="資料庫操作失敗") 
-
-        following_ids = (
-            DatabaseUser.objects
-            .filter(id=user_id)
-            .values_list("followings__id", flat=True)
-        )
+        try:
+            following_ids = (
+                DatabaseUser.objects
+                .filter(id=user_id)
+                .values_list("followings__id", flat=True)
+            )
+        except DatabaseError as e:
+            raise EntityOperationFailed(message="資料庫操作雌拜")
         
         # followings = db_user.followings.all()
         # following_ids = followings.values_list("following_id", flat=True)
@@ -141,6 +143,8 @@ class UserRepositoryImpl(UserRepository):
             )
         except DomainValidationError as e:
             raise InvalidEntityInput (message="資料轉換為 Entity 時失敗")
+        except TypeError as e:
+            raise InvalidEntityInput(message=f"封裝 User 資料失敗：{str(e)}")
 
 
     

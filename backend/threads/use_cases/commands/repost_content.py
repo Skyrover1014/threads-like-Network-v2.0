@@ -38,17 +38,19 @@ class CreateRePost:
             "post": {"author_id", "content", "repost_of", "repost_of_content_type"},
             "comment": {"author_id", "content", "repost_of", "repost_of_content_type","target"}
         }
-
+        print(target_type, flush=True)
         allowed_keys = param_keys[target_type]
         filter_kwargs = {key : value for key, value in kwargs.items() if key in allowed_keys} 
+        
         try:
             return builders[target_type](**filter_kwargs)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
+        except TypeError as e:
+            raise InvalidObject(message=f"封裝 {target_type} 失敗: {str(e)}")
 
     
     def _build_post_repost(self, author_id, content, repost_of, repost_of_content_type):
-        
         return DomainPost(
                 id=None,
                 author_id=author_id,
@@ -124,6 +126,8 @@ class CreateRePost:
             raise InvalidObject(message=e.message)
         except InvalidOperation as e:
             raise InvalidObject(message=e.message)
+        except EntityOperationFailed as e:
+            raise ServiceUnavailable(message=e.message)
             
 
         return RepostResult(repost=created_repost, original=original)

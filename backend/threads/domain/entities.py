@@ -78,8 +78,9 @@ class Like:
 class ContentItem(ABC):
     id:int
     author_id:int
-    # author_name:str
     content:str
+    # author_name:str
+    author_name:Optional[str] = None
     created_at:Optional[datetime] = None
     updated_at:Optional[datetime] = None
 

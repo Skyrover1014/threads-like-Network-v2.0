@@ -5,7 +5,7 @@ from typing import Literal
 
 from threads.common.base_exception import DomainValidationError
 from threads.common.exceptions.use_case_exceptions import InvalidObject, AlreadyExist, NotFound, ServiceUnavailable
-from threads.common.exceptions.repository_exceptions import EntityAlreadyExists, EntityDoesNotExist, EntityOperationFailed
+from threads.common.exceptions.repository_exceptions import EntityAlreadyExists, EntityDoesNotExist, EntityOperationFailed, InvalidEntityInput, InvalidOperation
 
 class CreateLike:
     def __init__(self, like_repository: LikeRepository):
@@ -19,6 +19,8 @@ class CreateLike:
                 content_type=content_type)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
+        except TypeError as e:
+            raise InvalidObject(message=f"封裝 Like 失敗: {str(e)}")
         
         try: 
             return self.like_repository.create_like(new_like)
@@ -28,3 +30,7 @@ class CreateLike:
             raise AlreadyExist(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable(message=e.message)
+        except InvalidEntityInput as e:
+            raise InvalidObject(message=e.message)
+        except InvalidOperation as e:
+            raise InvalidObject(message=e.message)

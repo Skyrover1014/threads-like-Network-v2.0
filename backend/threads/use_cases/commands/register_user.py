@@ -20,6 +20,8 @@ class RegisterUser:
             new_user = DomainUser(id=None, username=username, email=email, hashed_password=hashed_password)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
+        except TypeError as e:
+            raise InvalidObject(message=f"封裝 User 資料失敗：{str(e)}")
         
         try:
             return self.user_repository.create_user(new_user)

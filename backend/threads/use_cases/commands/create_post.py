@@ -14,6 +14,9 @@ class CreatePost:
             new_post = DomainPost(id=None, author_id=author_id, content=content)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
+        except TypeError as e:
+            raise InvalidObject(message=f"封裝 Post 失敗: {str(e)}")
+        
         try:
             return self.post_repository.create_post(new_post)
         except EntityDoesNotExist as e:

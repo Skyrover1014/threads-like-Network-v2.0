@@ -15,6 +15,8 @@ class CreateComment:
             new_comment = DomainComment(id=None, author_id=author_id, content=content, parent_post_id=parent_post_id, parent_comment_id=parent_comment_id)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
+        except TypeError as e:
+            raise InvalidObject(message=f"封裝 Comment 失敗: {str(e)}")
         
         try:
             return self.comment_repository.create_comment(new_comment)

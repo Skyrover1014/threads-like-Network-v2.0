@@ -24,12 +24,12 @@ class PostSerializer(serializers.Serializer):
 
     def get_repost_of_content_type(self, obj):
         mapping = {
-            4: "post",     # 假設 ContentType id=4 對應 post
-            2: "comment"   # 假設 ContentType id=2 對應 comment
+            2: "post",     # 假設 ContentType id=4 對應 post
+            4: "comment"   # 假設 ContentType id=2 對應 comment
         }
         return mapping.get(obj.repost_of_content_type, None)
 
 class CreatePostSerializer(serializers.Serializer):
     author_id = serializers.IntegerField()
-    author_name = serializers.CharField()  # ✅ 新增這行
+    # author_name = serializers.CharField()  # ✅ 新增這行
     content = serializers.CharField()

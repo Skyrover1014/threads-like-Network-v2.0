@@ -24,8 +24,11 @@ class DeletePost:
             raise UnauthorizedAction(message=e.message)
         
         try:
+            # print(target_domain_post, flush=True)
             return self.post_repository.delete_post(target_domain_post)
         except InvalidOperation as e:
             raise InvalidObject(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable(message=e.message)
+        except InvalidEntityInput as e:
+            raise InvalidObject(message=e.message)
