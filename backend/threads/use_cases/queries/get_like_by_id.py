@@ -13,7 +13,10 @@ class GetLikeById:
     def execute(self, user_id:int,  content_id:int, content_type:Literal['post','comment']):
 
         try:
-            return self.like_repository.get_like_by_id(user_id, content_id, content_type)
+            domain_like = self.like_repository.get_like_by_id(user_id, content_id, content_type)
+            if domain_like is None:
+                    raise NotFound(message="尚無 Like 紀錄")
+            return domain_like
         except InvalidEntityInput as e:
             raise InvalidObject(message=e.message)
         except EntityDoesNotExist as e:

@@ -13,10 +13,7 @@ class CreateLike:
     
     def execute(self,user_id: int, content_item_id:int, content_type:Literal['post', 'comment']) -> DomainLike:
         try:
-            new_like = DomainLike(
-                id=None, user_id=user_id, 
-                content_item_id=content_item_id, 
-                content_type=content_type)
+            new_like = DomainLike(id=None, user_id=user_id, content_item_id=content_item_id, content_type=content_type)
         except DomainValidationError as e:
             raise InvalidObject(message=e.message)
         except TypeError as e:
