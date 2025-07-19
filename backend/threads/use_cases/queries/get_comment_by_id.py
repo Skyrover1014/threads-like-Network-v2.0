@@ -13,7 +13,10 @@ class GetCommentById:
     
     def execute(self, comment_id:int, auth_user_id:int) -> Optional[DomainComment]:
         try:
-            return self.comment_repository.get_comment_by_id(comment_id, auth_user_id)
+            domain_comment = self.comment_repository.get_comment_by_id(comment_id, auth_user_id)
+            if domain_comment is None:
+                raise NotFound(message="此留言不存在或已經被刪除")
+            return domain_comment
         except EntityDoesNotExist as e:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:

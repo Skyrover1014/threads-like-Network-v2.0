@@ -13,6 +13,8 @@ class UpdateComment:
 
         try:
             old_domain_comment = self.comment_repository.get_comment_by_id(comment_id=comment_id, auth_user_id=user_id)
+            if old_domain_comment is None:
+                raise NotFound(message="找不到留言")
         except EntityDoesNotExist as e:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:

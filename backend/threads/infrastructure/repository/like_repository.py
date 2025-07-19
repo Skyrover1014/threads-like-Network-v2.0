@@ -132,7 +132,6 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
                 if not deleted_rows:
                     raise EntityDoesNotExist("Like 不存在")
                 self.adjust_likes_count(like.content_type, like.content_item_id, -1)
-                # db_like.delete()
         except DatabaseError as e:
             raise EntityOperationFailed(message="資料庫操作失敗")
         except InvalidEntityInput as e:
@@ -156,7 +155,6 @@ class LikeRepositoryImpl(LikeRepository, LikeBaseRepository):
             db_like = (like_model.objects
                        .select_related('user',content_type)
                        .get(**like_kwargs))
-            print(f"確認有無紀錄：{db_like}", flush=True)
         except like_model.DoesNotExist:
             return None
         except DatabaseError :

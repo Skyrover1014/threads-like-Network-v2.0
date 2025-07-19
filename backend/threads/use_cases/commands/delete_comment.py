@@ -11,6 +11,8 @@ class DeleteComment:
     def execute(self, user_id:int, comment_id:int) -> None:
         try:
             target_domain_comment = self.comment_repository.get_comment_by_id(comment_id, user_id)
+            if target_domain_comment is None:
+                raise NotFound(message="留言不存在")
         except EntityDoesNotExist as e:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:

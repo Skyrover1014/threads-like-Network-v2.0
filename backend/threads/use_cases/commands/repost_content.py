@@ -95,6 +95,8 @@ class CreateRePost:
     def execute(self, author_id:int, content:str, repost_of:int, repost_of_content_type: Literal["post", "comment"],target: RepostTarget) -> RepostResult:
         try:
             original = self._get_original_content(repost_of_content_type, repost_of, author_id)
+            if original is None:
+                raise NotFound(message="欲轉發的貼文不存在")
         except NotFound as e:
             raise 
         except ServiceUnavailable as e:

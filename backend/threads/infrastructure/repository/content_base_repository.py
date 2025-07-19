@@ -16,10 +16,6 @@ from django.db import DatabaseError
 
 
 from functools import lru_cache
-
-
-
-
 class ContentBaseRepository:
 
     _content_type_literals = {}
@@ -28,7 +24,7 @@ class ContentBaseRepository:
     @classmethod
     @lru_cache(maxsize=8)
     def get_content_type_from_literal(cls, content_type_literal: str) -> ContentType:
-        if not cls._content_type_literals:
+        if content_type_literal not in cls._content_type_literals:
             cls._content_type_literals = {
                 "post": ContentType.objects.get_for_model(DatabasePost),
                 "comment": ContentType.objects.get_for_model(DatabaseComment)
@@ -38,42 +34,17 @@ class ContentBaseRepository:
         except KeyError:
             raise ValueError("不支援的 ContentType")
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=8)
-    def get_content_type_from_ids(cls, content_type_id: int) -> str:
-        if not cls._content_type_ids:
-            cls._content_type_ids = {
-                ContentType.objects.get_for_model(DatabasePost).id: "post",
-                ContentType.objects.get_for_model(DatabaseComment).id: "comment"
-            }
+    def get_content_type_from_ids(content_type_id:int) -> ContentType:
+        CONTENT_TYPE_IDS = {
+            ContentType.objects.get_for_model(DatabasePost).id: "post",
+            ContentType.objects.get_for_model(DatabaseComment).id: "comment"
+        }
         try:
-            return cls._content_type_ids[content_type_id]
+            return CONTENT_TYPE_IDS[content_type_id]
         except KeyError:
             raise InvalidEntityInput(f"找不到 ContentType，id={content_type_id}")
-
-    # @staticmethod
-    # @lru_cache(maxsize=8)
-    # def get_content_type_from_ids(content_type_id:int) -> ContentType:
-    #     CONTENT_TYPE_IDS = {
-    #         ContentType.objects.get_for_model(DatabasePost).id: "post",
-    #         ContentType.objects.get_for_model(DatabaseComment).id: "comment"
-    #     }
-    #     try:
-    #         return CONTENT_TYPE_IDS[content_type_id]
-    #     except KeyError:
-    #         raise InvalidEntityInput(f"找不到 ContentType，id={content_type_id}")
-    
-    # @staticmethod
-    # @lru_cache(maxsize=8)
-    # def get_content_type_from_literal(content_type_literal:str) -> ContentType:
-    #     CONTENT_TYPE_LITERALS = {
-    #         "post": ContentType.objects.get_for_model(DatabasePost),
-    #         "comment": ContentType.objects.get_for_model(DatabaseComment)
-    #     }
-    #     try:
-    #         return CONTENT_TYPE_LITERALS[content_type_literal]
-    #     except KeyError:
-    #         raise ValueError("不支援的ContentType")
 
     def _decode_orm_post(self, db_post:DatabasePost) -> DomainPost:
         try:
@@ -101,6 +72,7 @@ class ContentBaseRepository:
             raise InvalidEntityInput(message=f"封裝 Post 失敗: {str(e)}")
     
     def _decode_orm_comment(self, db_comment:DatabaseComment) -> DomainComment:
+        print(f"content_type_id:{db_comment.repost_of_content_type_id}", flush=True)
         try:
             return DomainComment(
                 id=db_comment.id,
@@ -127,7 +99,7 @@ class ContentBaseRepository:
         except TypeError as e:
             raise InvalidEntityInput(message=f"封裝 Comment 失敗: {str(e)}")
     
-    def adjust_reposts_count(self, repost_of: int, repost_of_content_type:int, delta:int):
+    def adjust_reposts_count(self, repost_of: int, repost_of_content_type:str, delta:int):
         if not isinstance(delta, int):
             raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
         

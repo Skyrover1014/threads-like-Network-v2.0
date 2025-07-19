@@ -16,6 +16,8 @@ class GetChildCommentsByCommentId:
 
         try:
             domain_comment = self.comment_repository.get_comment_by_id(comment_id=comment_id,auth_user_id=auth_user_id)
+            if domain_comment is None:
+                raise NotFound(message="留言不存在")
         except EntityDoesNotExist as e:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:
