@@ -15,8 +15,6 @@ from typing import Optional, List
 class PostRepositoryImpl(PostRepository, ContentBaseRepository):
     #基本創建貼文、更新貼文和刪除貼文
     def create_post(self, post: DomainPost) -> DomainPost:
-        # if not DatabaseUser.objects.filter(id=post.author_id).exists():
-        #     raise EntityDoesNotExist(message="使用者不存在")
         try:
             db_post = DatabasePost.objects.create(
                 author_id=post.author_id,
@@ -26,17 +24,26 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise EntityOperationFailed(message="資料庫操作失敗")
         
         try:
+            db_post = DatabasePost.objects.select_related("author").get(id=db_post.id)
+        except DatabaseError :
+            raise EntityOperationFailed(message="資料庫操作失敗")        
+        try:
             return self._decode_orm_post(db_post)
         except InvalidEntityInput as e:
             raise
         
     def get_post_by_id(self, post_id:int, auth_user_id: int) -> Optional[DomainPost]:
         try:
-            db_post = DatabasePost.objects.annotate(
-                is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
-            ).get(id=post_id)
+            db_post =(
+                DatabasePost.objects
+                .select_related("author")
+                .annotate(
+                    is_liked = self._annotate_is_liked_for_content("post", auth_user_id)
+                )
+                .get(id=post_id)
+            ) 
         except DatabasePost.DoesNotExist:
-            raise EntityDoesNotExist(message="貼文不存在")
+            return None
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗")
         except EntityOperationFailed as e:
@@ -49,14 +56,24 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
         except InvalidEntityInput as e:
             raise
         
-    def update_post(self, post: DomainPost) -> Optional[DomainPost]:
-        
-        db_post = DatabasePost.objects.get(id=post.id)
-        db_post.content = post.content
-        db_post.updated_at = post.updated_at
+    def update_post(self, post: DomainPost) -> Optional[DomainPost]:        
+        try:
+            db_post =(
+                DatabasePost.objects.filter(id=post.id)
+                .update(
+                    content = post.content,
+                    updated_at = post.updated_at
+                )
+            )
+        except DatabaseError :
+            raise EntityOperationFailed(message="資料庫操作失敗")
         
         try:
-            db_post.save()
+            db_post = (
+                DatabasePost.objects
+                .select_related("author")
+                .get(id = post.id)
+            )
         except DatabaseError :
             raise EntityOperationFailed(message="資料庫操作失敗")
         
@@ -66,20 +83,18 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise
     
     def delete_post(self, post: DomainPost) -> None:
-        with transaction.atomic():
-            if post.is_repost == True:
-                try:
+        try:
+            with transaction.atomic():
+                if post.is_repost == True:
                     self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= -1)
-                except InvalidOperation as e:
-                    raise
-                except InvalidEntityInput as e:
-                    raise
-
-            db_post = DatabasePost.objects.get(id=post.id)
-            try:
-                db_post.delete()
-            except DatabaseError as e:
-                raise EntityOperationFailed(message="資料庫操作失敗")
+                
+                db_post = DatabasePost.objects.filter(id=post.id).delete()
+        except DatabaseError as e:
+            raise EntityOperationFailed(message="資料庫操作失敗")
+        except InvalidOperation as e:
+            raise
+        except InvalidEntityInput as e:
+            raise
         return None
     
     
@@ -158,8 +173,8 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
         except ValueError as e:
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
         
-        with transaction.atomic():
-            try:
+        try:
+            with transaction.atomic():
                 db_post = DatabasePost.objects.create(
                     author_id=post.author_id,
                     content=post.content,
@@ -167,15 +182,18 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
                     repost_of_content_type= repost_of_content_type,
                     repost_of_content_item_id= post.repost_of
                     )
-            except DatabaseError as e:
-                raise EntityOperationFailed(message="資料庫操作失敗")
-            try:
                 self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= 1)
-            except InvalidEntityInput as e:
-                raise
-            except InvalidOperation as e:
-                raise
+        except DatabaseError as e:
+            raise EntityOperationFailed(message="資料庫操作失敗")            
+        except InvalidEntityInput as e:
+            raise
+        except InvalidOperation as e:
+            raise
             
+        try:
+            db_post = DatabasePost.objects.select_related("author").get(id = db_post.id)
+        except DatabaseError:
+            raise EntityOperationFailed("資料庫操作失敗")
         try:
             return self._decode_orm_post(db_post)
         except InvalidEntityInput as e:

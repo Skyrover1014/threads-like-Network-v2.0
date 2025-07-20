@@ -14,6 +14,8 @@ class UpdatePost:
     def execute(self, post_id: int, data: dict, user_id: int) -> DomainPost:
         try:
             old_domain_post = self.post_repository.get_post_by_id(post_id, user_id)
+            if old_domain_post is None:
+                raise NotFound(message="欲更新貼文不存在")
         except EntityDoesNotExist as e:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:
