@@ -168,9 +168,8 @@ class CommentRepositoryImpl(CommentRepository, ContentBaseRepository):
             repost_of_content_type = self.get_content_type_from_literal(comment.repost_of_content_type)
         except ValueError as e:
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
-       
-        with transaction.atomic():
-            try:
+        try:    
+            with transaction.atomic():
                 db_comment = DatabaseComment.objects.create(
                     author_id=comment.author_id,
                     content=comment.content,
@@ -180,20 +179,18 @@ class CommentRepositoryImpl(CommentRepository, ContentBaseRepository):
                     parent_post_id=comment.parent_post_id,
                     parent_comment_id = comment.parent_comment_id
                 )
-            except DatabaseError as e:
-                raise EntityOperationFailed(message="資料庫操作失敗")
-            
-            try:
                 self.adjust_comments_count(parent_post_id=comment.parent_post_id, parent_comment_id=comment.parent_comment_id, delta= 1)
-            except InvalidEntityInput as e:
-                raise
-
-            try:
                 self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta=1)
-            except InvalidEntityInput as e:
-                raise
-            except InvalidOperation as e:
-                raise
+        
+        except DatabaseError as e:
+            raise EntityOperationFailed(message="資料庫操作失敗")
+        except InvalidEntityInput as e:
+            raise
+        except InvalidEntityInput as e:
+            raise
+        except InvalidOperation as e:
+            raise    
+        
         try:
             db_comment = DatabaseComment.objects.select_related("author","parent_post","parent_comment").get(id=db_comment.id)
         except DatabaseError:
