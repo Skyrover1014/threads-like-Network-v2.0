@@ -36,14 +36,14 @@ jobs:
     
       - name: Write .env file
         run: |
-          echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> .env
-          echo "DATABASE_NAME=${DATABASE_NAME}" >> .env
-          echo "DATABASE_USER=${DATABASE_USER}" >> .env
-          echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> .env
-          echo "DATABASE_HOST=${DATABASE_HOST}" >> .env
-          echo "DATABASE_PORT=${DATABASE_PORT}" >> .env
-          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
-          echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> .env
+          echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
+          echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
+          echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
+          echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> backend/.env
+          echo "DATABASE_HOST=${DATABASE_HOST}" >> backend/.env
+          echo "DATABASE_PORT=${DATABASE_PORT}" >> backend/.env
+          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> backend/.env
+          echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> backend/.env
 
       - name: Run Docker Compose
         run: |
