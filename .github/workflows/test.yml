@@ -36,7 +36,11 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-    
+      
+      - name: Debug Show POSTGRES_PASSWORD
+        run: echo "POSTGRES_PASSWORD is $POSTGRES_PASSWORD"
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       - name: Write .env file
         run: |
           echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
