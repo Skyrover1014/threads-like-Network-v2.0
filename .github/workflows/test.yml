@@ -57,12 +57,15 @@ jobs:
       - name: Wait for DB to be ready
         run: |
           docker compose -f docker-compose-test.yml exec -T db-test bash -c "until pg_isready; do sleep 1; done"
+        working-directory: ./backend
 
       - name: Run tests inside web container
         run: |
           docker compose -f docker-compose-test.yml exec -T web-test bash -c "pytest --maxfail=1 --disable-warnings -q"
+        working-directory: ./backend
 
       - name: Tear down
         if: always()
         run: |
           docker compose -f docker-compose-test.yml down --volumes
+        working-directory: ./backend
