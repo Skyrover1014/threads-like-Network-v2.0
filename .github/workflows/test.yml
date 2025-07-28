@@ -33,6 +33,9 @@ jobs:
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
     
       - name: Write .env file
         run: |
@@ -44,6 +47,9 @@ jobs:
           echo "DATABASE_PORT=${DATABASE_PORT}" >> backend/.env
           echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> backend/.env
           echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> backend/.env
+          echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
+          echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
+          echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
 
       - name: Run Docker Compose
         run: |
