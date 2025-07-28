@@ -1,0 +1,92 @@
+name: Build & Push Prod Image to ECR
+
+on:
+  workflow_run:
+    workflows: ["CI test"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: >
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    environment: prod
+
+    services:
+        docker: # optional，GitHub 已預裝 Docker
+          image: docker:24.0.6
+          options: --privileged
+    
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: echo "DOCKER COMPOSE START"
+        env:
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KET }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Write .env file
+        run: |
+            echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> .env
+            echo "DATABASE_NAME=${DATABASE_NAME}" >> .env
+            echo "DATABASE_USER=${DATABASE_USER}" >> .env
+            echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> .env
+            echo "DATABASE_HOST=${DATABASE_HOST}" >> .env
+            echo "DATABASE_PORT=${DATABASE_PORT}" >> .env
+            echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
+            echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> .env
+      
+      - name: Start containers to verify services
+        run: |
+            docker compose -f docker-compose-prod.yml up -d --build
+        env:
+            POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+    
+      - name: Wait for Postgres to be ready
+        run: |
+            docker compose -f docker-compose-prod.yml exec -T db-prod bash -c "until pg_isready -U $POSTGRES_USER; do sleep 1; done"
+        env:
+            POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+
+    # ✅ 建議這時候就把驗證完成的 container 下掉
+      - name: Tear down containers before build
+        run: docker compose -f docker-compose-prod.yml down --volumes
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1  # 根據你使用的區域調整
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-northeast-1 | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-1.amazonaws.com
+
+      - name: Build Docker image with Compose
+        run: |
+          docker compose -f docker-compose-prod.yml build web-prod
+
+      - name: Tag image
+        run: |
+          docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:latest
+
+      - name: Push image to ECR
+        run: |
+          docker push ${{ secrets.ECR_REPO_URL }}:latest

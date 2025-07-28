@@ -1,0 +1,68 @@
+name: CI Dev
+
+on:
+  workflow_run:
+    workflows: ["CI test"]
+    types:
+      - completed
+
+jobs:
+  dev:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: dev
+
+    services:
+      docker:
+        image: docker:24.0.6
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set env vars
+        run: echo "Starting Docker Compose for Dev..."
+        env:
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER: ${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+      
+      - name: Write .env file
+        run: |
+          echo "DATABASE_NAME=${DATABASE_NAME}" >> .env
+          echo "DATABASE_USER=${DATABASE_USER}" >> .env
+          echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> .env
+          echo "DATABASE_HOST=${DATABASE_HOST}" >> .env
+          echo "DATABASE_PORT=${DATABASE_PORT}" >> .env
+          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
+          echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> .env
+
+      - name: Build and start containers
+        run: |
+          docker compose -f docker-compose-dev.yml up -d --build
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
+      - name: Wait for DB to be ready
+        run: |
+          docker compose -f docker-compose-dev.yml exec -T db-dev bash -c "until pg_isready; do sleep 1; done"
+
+      - name: Run migrations
+        run: |
+          docker compose -f docker-compose-dev.yml exec -T web-dev bash -c "python manage.py migrate"
+
+      - name: Run unit tests
+        run: |
+          docker compose -f docker-compose-dev.yml exec -T web-dev bash -c "pytest --maxfail=1 --disable-warnings -q"
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose -f docker-compose-dev.yml down --volumes
