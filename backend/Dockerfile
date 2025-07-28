@@ -23,7 +23,7 @@ COPY pyproject.toml poetry.lock* ./
 # ---------- builder: dev ----------
 FROM builder-base AS builder-dev
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
-    poetry install --with dev --no-root
+    poetry install --with dev --no-root --without test
 
  
 # ---------- runtime: dev ----------
@@ -42,7 +42,7 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 # ---------- builder: test ----------
 FROM builder-base AS builder-test
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
-    poetry install --with test --no-root
+    poetry install --with test --no-root --without dev
 
 
 # ---------- runtime: test ----------
