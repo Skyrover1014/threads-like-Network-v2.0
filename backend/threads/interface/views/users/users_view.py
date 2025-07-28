@@ -8,8 +8,9 @@ from ...serializers.user_serializer import RegisterUserSerializer
 from threads.infrastructure.repository.user_repository import UserRepositoryImpl
 from threads.use_cases.commands.register_user import RegisterUser
     
+from threads.interface.util.dev_tool import extend_schema_view, extend_schema, OpenApiResponse, OpenApiExample
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+# from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
 from threads.interface.serializers.message_serializer import MessageSerializer
 @extend_schema_view(
     post=extend_schema(

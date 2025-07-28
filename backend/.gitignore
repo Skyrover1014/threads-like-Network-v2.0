@@ -18,6 +18,7 @@ __pycache__/
 # dotenv
 .env*
 .env.*  # 支援 .env.development、.env.production
+.env.prod
 
 # Test/coverage
 htmlcov/

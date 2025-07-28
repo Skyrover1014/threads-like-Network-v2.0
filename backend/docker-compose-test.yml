@@ -1,26 +1,24 @@
 services:
-  web-dev:  # dev
+  web-test:  # test
     build:
       context: .
-      target: runtime-dev
-    command: python manage.py runserver 0.0.0.0:8000
+      target: runtime-test
+    command: pytest
     env_file: .env
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
     depends_on:
-      - db-dev
-  db-dev:
+      - db-test
+
+  db-test:
     image: postgres:15
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_test:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5432:5432" 
 
 volumes:
-  postgres_data:
+  postgres_data_test:
+  static_volume:

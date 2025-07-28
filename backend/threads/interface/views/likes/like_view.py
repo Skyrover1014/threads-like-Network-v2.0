@@ -12,7 +12,8 @@ from threads.use_cases.queries.get_like_by_id import GetLikeById
 from threads.use_cases.commands.create_like import CreateLike
 from threads.use_cases.commands.delete_like import DeleteLike
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.util.dev_tool import extend_schema_view, extend_schema, OpenApiResponse, OpenApiExample
+# from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
 from threads.interface.serializers.message_serializer import MessageSerializer
 
 @extend_schema_view(

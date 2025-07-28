@@ -12,8 +12,8 @@ from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 from .base_fact_check_view import FactCheckBaseView
 
-
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.util.dev_tool import extend_schema_view, extend_schema, OpenApiResponse, OpenApiExample
+# from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
 from threads.interface.serializers.message_serializer import MessageSerializer
 
 
