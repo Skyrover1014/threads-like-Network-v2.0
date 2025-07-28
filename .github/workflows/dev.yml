@@ -1,14 +1,11 @@
 name: CI Dev
 
 on:
-  workflow_run:
-    workflows: ["CI test"]
-    types:
-      - completed
+  push:
+    branches: [dev]
 
 jobs:
   dev:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: dev
 
@@ -31,20 +28,27 @@ jobs:
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       
       - name: Write .env file
         run: |
-          echo "DATABASE_NAME=${DATABASE_NAME}" >> .env
-          echo "DATABASE_USER=${DATABASE_USER}" >> .env
-          echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> .env
-          echo "DATABASE_HOST=${DATABASE_HOST}" >> .env
-          echo "DATABASE_PORT=${DATABASE_PORT}" >> .env
-          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
-          echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> .env
+          echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
+          echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
+          echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> backend/.env
+          echo "DATABASE_HOST=${DATABASE_HOST}" >> backend/.env
+          echo "DATABASE_PORT=${DATABASE_PORT}" >> backend/.env
+          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> backend/.env
+          echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> backend/.env
+          echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
+          echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
+          echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
 
       - name: Build and start containers
         run: |
-          docker compose -f docker-compose-dev.yml up -d --build
+          docker compose -f docker-compose-dev.yml up --build
+        working-directory: ./backend
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
@@ -53,16 +57,20 @@ jobs:
       - name: Wait for DB to be ready
         run: |
           docker compose -f docker-compose-dev.yml exec -T db-dev bash -c "until pg_isready; do sleep 1; done"
+        working-directory: ./backend
 
       - name: Run migrations
         run: |
           docker compose -f docker-compose-dev.yml exec -T web-dev bash -c "python manage.py migrate"
+        working-directory: ./backend
 
       - name: Run unit tests
         run: |
           docker compose -f docker-compose-dev.yml exec -T web-dev bash -c "pytest --maxfail=1 --disable-warnings -q"
+        working-directory: ./backend
 
       - name: Tear down
         if: always()
         run: |
           docker compose -f docker-compose-dev.yml down --volumes
+        working-directory: ./backend
