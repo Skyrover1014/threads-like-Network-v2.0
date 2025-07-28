@@ -34,7 +34,6 @@ DEBUG = False
 
 
 ALLOWED_HOSTS = ["your-ec2-ip.compute.amazonaws.com", "localhost", "127.0.0.1", "0.0.0.0"]# 將來 Cloudflare 網域是 xxx.com 時再加上
-# ALLOWED_HOSTS = ["xxx.com", "www.xxx.com", ...]
 
 # Application definition
 
