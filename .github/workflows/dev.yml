@@ -41,7 +41,10 @@ jobs:
           echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
           echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
           echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
-
+      - name: Print .env
+        run: cat backend/.env
+        working-directory: ./backend
+        
       - name: Build and start containers with smock check and migrate
         env:
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
