@@ -3,12 +3,12 @@ services:
     build:
       context: .
       target: runtime-test
-    command: >
-      - pytest
+    command: 
       - bash
       - -c
       - |
-        python manage.py collectstatic --noinput --settings=core.prod_settings
+        pytest && \
+        python manage.py collectstatic --noinput --settings=core.prod_settings && \
         gunicorn core.wsgi:application --bind 0.0.0.0:8000
     env_file: .env
     depends_on:
