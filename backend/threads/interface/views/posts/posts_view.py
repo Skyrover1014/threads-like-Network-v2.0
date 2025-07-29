@@ -15,7 +15,8 @@ from threads.use_cases.queries.get_all_posts import GetAllPost
 from threads.use_cases.queries.get_following_user_ids import GetFollowingUserIds
 from threads.use_cases.commands.create_post import CreatePost
 
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.util.dev_tool import extend_schema_view, extend_schema, OpenApiResponse, OpenApiExample
+# from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
 from threads.interface.serializers.message_serializer import MessageSerializer
 
 

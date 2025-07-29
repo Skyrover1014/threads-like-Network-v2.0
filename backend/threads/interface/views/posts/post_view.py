@@ -12,7 +12,9 @@ from threads.infrastructure.repository.post_repository import PostRepositoryImpl
 from threads.use_cases.queries.get_post_by_id import GetPostById
 from threads.use_cases.commands.update_post import UpdatePost
 from threads.use_cases.commands.delete_post import DeletePost
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+
+from threads.interface.util.dev_tool import extend_schema_view, extend_schema, OpenApiResponse, OpenApiExample
+# from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
 from threads.interface.serializers.message_serializer import MessageSerializer
 @extend_schema_view(
     get=extend_schema(

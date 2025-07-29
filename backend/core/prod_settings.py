@@ -26,13 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-736bnc&74&^)!g8@9-b#l1ga*32v)a_q4af^k090rc!yp)b=^u'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
 
+
+ALLOWED_HOSTS = ["your-ec2-ip.compute.amazonaws.com", "localhost", "127.0.0.1", "0.0.0.0"]# 將來 Cloudflare 網域是 xxx.com 時再加上
 
 # Application definition
 
@@ -41,8 +42,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'threads',
-    'silk',
-    'drf_spectacular',
+    # 'silk',
+    # 'drf_spectacular',
     # 'threads.infrastructure',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,20 +61,21 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Threads API',
-    'DESCRIPTION': 'API for the Threads app',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'ENUM_NAME_OVERRIDES': {
-        'threads.domain.enum.ContentTypeEnum': 'UnifiedContentTypeEnum',
-    }
-}
+# SPECTACULAR_SETTINGS = {
+#     'TITLE': 'Threads API',
+#     'DESCRIPTION': 'API for the Threads app',
+#     'VERSION': '1.0.0',
+#     'SERVE_INCLUDE_SCHEMA': False,
+#     'ENUM_NAME_OVERRIDES': {
+#         'threads.domain.enum.ContentTypeEnum': 'UnifiedContentTypeEnum',
+#     }
+# }
+
 MIDDLEWARE = [
-    'silk.middleware.SilkyMiddleware',
+    # 'silk.middleware.SilkyMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -128,7 +130,7 @@ DATABASES = {
         'NAME': os.getenv('DATABASE_NAME'),
         'USER': os.getenv('DATABASE_USER'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST': os.getenv('DATABASE_HOST'),  # ✅ 預設是 docker-compose 的 service 名稱
+        'HOST': os.getenv('DATABASE_HOST'), 
         'PORT': os.getenv('DATABASE_PORT'),
     }
 }
@@ -168,9 +170,25 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

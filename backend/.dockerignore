@@ -1,9 +1,47 @@
+# ==== Python build artifacts ====
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-.env
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.cache/
+
+# 若只在 builder 階段用到，可排除避免 runtime image 多餘內容
+
+# ==== Django SQLite / log files ====
 *.sqlite3
+*.log
+django_sql.log
+local_settings.py
+
+# ==== Test-related ====
+.coverage
+.coverage.*
+htmlcov/
+.junit.xml
+
+# ==== Secrets / Env ====
+.env
+.env.*
+*.pem
+*.key
+
+# ==== Docker & Compose files ====
+Dockerfile
+Dockerfile*
+docker-compose.yml
+docker-compose-*.yml
+
+# ==== Git & Editor settings ====
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# ==== System/OS trash ====
 .DS_Store
-/media
-/staticfiles
-/node_modules
+Thumbs.db

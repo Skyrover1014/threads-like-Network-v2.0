@@ -12,8 +12,8 @@ from threads.infrastructure.repository.comment_repository import CommentReposito
 from threads.use_cases.commands.create_comment import CreateComment
 from threads.use_cases.queries.get_comments_by_post_id import GetCommentsByPostId
 
-
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
+from threads.interface.util.dev_tool import extend_schema_view, extend_schema, OpenApiResponse, OpenApiExample
+# from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiExample, OpenApiRequest
 from threads.interface.serializers.message_serializer import MessageSerializer
 
 
