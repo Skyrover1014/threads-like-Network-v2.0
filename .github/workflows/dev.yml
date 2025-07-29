@@ -28,9 +28,7 @@ jobs:
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
       
       - name: Write .env file
         run: |
@@ -41,13 +39,10 @@ jobs:
           echo "DATABASE_PORT=${DATABASE_PORT}" >> backend/.env
           echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> backend/.env
           echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> backend/.env
-          echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
-          echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
-          echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
 
       - name: Build and start containers
         run: |
-          docker compose -f docker-compose.yml up --build
+          docker compose -f docker-compose.yml up --build --abort-on-container-exit
         working-directory: ./backend
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
@@ -56,17 +51,19 @@ jobs:
 
       - name: Wait for DB to be ready
         run: |
-          docker compose -f docker-compose.yml exec -T db-dev bash -c "until pg_isready; do sleep 1; done"
+          until docker compose -f docker-compose.yml exec -T db-dev pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do
+            sleep 1
+          done
         working-directory: ./backend
 
-      - name: Run migrations
+      - name: Smoke Check
+        run: |
+          docker compose -f docker-compose.yml exec -T web-dev python manage.py check
+        working-directory: ./backend
+
+      - name: Run migrate 
         run: |
           docker compose -f docker-compose.yml exec -T web-dev bash -c "python manage.py migrate"
-        working-directory: ./backend
-
-      - name: Run unit tests
-        run: |
-          docker compose -f docker-compose.yml exec -T web-dev bash -c "pytest --maxfail=1 --disable-warnings -q"
         working-directory: ./backend
 
       - name: Tear down

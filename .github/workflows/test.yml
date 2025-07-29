@@ -33,8 +33,7 @@ jobs:
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
-
-
+          
       - name: Write .env file
         run: |
           echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
