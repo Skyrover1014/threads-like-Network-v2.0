@@ -82,11 +82,11 @@ jobs:
 
       - name: Build Docker image with Compose
         run: |
-          docker compose -f docker-compose-prod.yml build --tag web-prod:latest web-prod
+          docker build --tag web-prod:latest web-prod
         working-directory: ./backend
       - name: Debug image list
         run: docker images
-        
+
       - name: Tag image
         run: |
           docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:latest
