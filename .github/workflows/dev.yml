@@ -18,8 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set env vars
-        run: echo "Starting Docker Compose for Dev..."
+      - name: Set env vars and write .env file
         env:
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
           DATABASE_USER: ${{ secrets.DATABASE_USER }}
@@ -31,8 +30,6 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      
-      - name: Write .env file
         run: |
           echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
           echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
