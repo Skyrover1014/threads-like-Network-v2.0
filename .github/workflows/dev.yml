@@ -45,48 +45,16 @@ jobs:
           echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
           echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
 
-      - name: Build and start containers
+      - name: Build and start containers with smock check and migrate
         env:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        run: |
-          docker compose -f docker-compose.yml up -d --build
         working-directory: ./backend
-
-      - name: Wait for db-dev container to be Up
-        env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          until docker compose -f docker-compose.yml ps | grep db‑dev | grep Up; do
-            echo "Waiting for db-dev..."
-            sleep 1
-          done
-        working-directory: ./backend
-
-      - name: Wait for DB to be ready
-        env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        run: |
-          until docker compose -f docker-compose.yml exec -T db-dev pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do
-            sleep 1
-          done
-        working-directory: ./backend
-
-      - name: Smoke Check
-        run: |
-          docker compose -f docker-compose.yml exec -T web-dev python manage.py check
-        working-directory: ./backend
-
-      - name: Run migrate 
-        run: |
-          docker compose -f docker-compose.yml exec -T web-dev bash -c "python manage.py migrate"
-        working-directory: ./backend
-
+          docker compose -f docker-compose.yml up --build --detach --wait --wait-timeout 60
+          docker compose exec -T web-dev python manage.py check
+          docker compose exec -T web-dev bash -c "python manage.py migrate"
 
       - name: Tear down
         if: always()
