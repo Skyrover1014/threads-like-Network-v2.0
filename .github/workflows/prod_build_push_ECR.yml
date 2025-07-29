@@ -59,7 +59,6 @@ jobs:
             docker compose -f docker-compose-prod.yml up --build --detach --wait --wait-timeout 60
         working-directory: ./backend
 
-    # ✅ 建議這時候就把驗證完成的 container 下掉
       - name: Tear down containers before build
         run: docker compose -f docker-compose-prod.yml down --volumes
         working-directory: ./backend
