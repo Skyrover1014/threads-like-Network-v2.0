@@ -82,8 +82,9 @@ jobs:
 
       - name: Build Docker image with Compose
         run: |
-          docker build --tag web-prod:latest web-prod
+          docker build -t web-prod:latest .
         working-directory: ./backend
+        
       - name: Debug image list
         run: docker images
 
