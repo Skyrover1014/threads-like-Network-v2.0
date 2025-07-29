@@ -83,14 +83,14 @@ jobs:
       - name: Build Docker image with Compose
         run: |
           docker compose -f docker-compose-prod.yml build web-prod
-          working-directory: ./backend
+        working-directory: ./backend
 
       - name: Tag image
         run: |
           docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:latest
-          working-directory: ./backend
+        working-directory: ./backend
 
       - name: Push image to ECR
         run: |
           docker push ${{ secrets.ECR_REPO_URL }}:latest
-          working-directory: ./backend
+        working-directory: ./backend
