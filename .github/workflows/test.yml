@@ -50,9 +50,7 @@ jobs:
 
       - name: Run tests
         run: |
-          docker compose -f docker-compose-test.yml up --build --detach --wait --wait-timeout 60
-          docker compose exec -T web-dev python manage.py check --settings=core.prod_settings
-          docker compose exec -T web-dev bash -c "python manage.py migrate --settings=core.prod_settings"
+          docker compose -f docker-compose-test.yml up --build --abort-on-container-exit
         working-directory: ./backend
 
       - name: Tear down
