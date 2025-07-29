@@ -46,11 +46,31 @@ jobs:
           echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
 
       - name: Build and start containers
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           docker compose -f docker-compose.yml up -d --build
         working-directory: ./backend
 
+      - name: Wait for db-dev container to be Up
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          until docker compose -f docker-compose.yml ps | grep db‑dev | grep Up; do
+            echo "Waiting for db-dev..."
+            sleep 1
+          done
+        working-directory: ./backend
+
       - name: Wait for DB to be ready
+        env:
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           until docker compose -f docker-compose.yml exec -T db-dev pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do
             sleep 1
