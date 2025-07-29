@@ -43,17 +43,6 @@ jobs:
           echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
 
       - name: Build and start containers with smock check and migrate
-        env:
-          DATABASE_NAME: ${{ vars.DATABASE_NAME }}
-          DATABASE_USER: ${{ vars.DATABASE_USER }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          DATABASE_HOST: ${{ vars.DATABASE_HOST }}
-          DATABASE_PORT: ${{ vars.DATABASE_PORT }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
-          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
-          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         working-directory: ./backend
         run: |
           docker compose -f docker-compose.yml up --build --detach --wait --wait-timeout 60
