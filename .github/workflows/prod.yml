@@ -1,19 +1,13 @@
-name: Build & Push Prod Image to ECR
+name: Prod Smoke Test
 
 on:
-  workflow_run:
-    workflows: ["CI test"]
-    types:
-      - completed
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  deploy:
-    if: >
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.head_branch == 'main'
+  test:
     runs-on: ubuntu-latest
     environment: prod
-
     services:
         docker: # optional，GitHub 已預裝 Docker
           image: docker:24.0.6
@@ -67,19 +61,6 @@ jobs:
         run: docker compose -f docker-compose-prod.yml down --volumes
         working-directory: ./backend
 
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-southeast-2  # 根據你使用的區域調整
-
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ap-southeast-2 | \
-          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-2.amazonaws.com
-
       - name: Build Docker image with Compose
         run: |
           docker build -t web-prod:latest .
@@ -87,13 +68,3 @@ jobs:
         
       - name: Debug image list
         run: docker images
-
-      - name: Tag image
-        run: |
-          docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:latest
-        working-directory: ./backend
-
-      - name: Push image to ECR
-        run: |
-          docker push ${{ secrets.ECR_REPO_URL }}:latest
-        working-directory: ./backend
