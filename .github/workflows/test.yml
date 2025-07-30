@@ -4,15 +4,12 @@ on:
   pull_request:
     branches: [ main ]
   push:
-    branches:
-      - "**"
+    branches: [dev]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     environment: test
-
-
     services:
       docker: # optional，GitHub 已預裝 Docker
         image: docker:24.0.6
