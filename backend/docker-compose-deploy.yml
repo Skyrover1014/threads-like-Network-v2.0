@@ -1,6 +1,6 @@
 services:
   web-prod:
-    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:v1.1.1
+    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:v1.2.1
     command: >
       sh -c "python manage.py collectstatic --noinput --settings=core.prod_settings &&
         gunicorn core.wsgi:application --bind 0.0.0.0:8000"

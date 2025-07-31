@@ -3,7 +3,12 @@ name: Build & Push Prod Image to ECR
 on:
   push:
     branches: [ main ]
-
+    paths:
+      - 'backend/**'
+      - '!backend/docker-compose.yml'  # 排除 deploy 檔案
+      - '!backend/docker-compose-test.yml'  # 排除 deploy 檔案
+      - '!backend/docker-compose-deploy.yml'  # 排除 deploy 檔案
+      - '!backend/nginx/**'                   # 排除 nginx 設定檔
 jobs:
   deploy:
     runs-on: ubuntu-latest
