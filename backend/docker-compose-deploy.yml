@@ -1,0 +1,43 @@
+services:
+  web-prod:
+    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:v1.1.1
+    command: >
+      sh -c "python manage.py collectstatic --noinput --settings=core.prod_settings &&
+        gunicorn core.wsgi:application --bind 0.0.0.0:8000"
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_volume:/app/staticfiles
+    depends_on:
+      - db-prod
+
+  nginx-prod:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/staticfiles
+    ports:
+      - "80:80"
+    depends_on:
+      - web-prod
+
+  db-prod:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" 
+
+volumes:
+  postgres_data_prod:
+  static_volume:
