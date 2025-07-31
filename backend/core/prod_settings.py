@@ -33,7 +33,7 @@ DEBUG = False
 
 
 
-ALLOWED_HOSTS = ["36.226.191.2", "101.10.85.188", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["16.176.207.104", "localhost", "127.0.0.1"]
 # Application definition
 
 INSTALLED_APPS = [
