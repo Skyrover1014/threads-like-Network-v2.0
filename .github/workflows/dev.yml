@@ -32,7 +32,7 @@ jobs:
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-          echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> .env
+          echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
           echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
           echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
           echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> backend/.env
