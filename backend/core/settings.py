@@ -91,7 +91,7 @@ DATABASES = {
         'NAME': os.getenv('DATABASE_NAME'),
         'USER': os.getenv('DATABASE_USER'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST': os.getenv('DATABASE_HOST'),  # ✅ 預設是 docker-compose 的 service 名稱
+        'HOST': os.getenv('DATABASE_HOST'),  
         'PORT': os.getenv('DATABASE_PORT'),
     }
 }
