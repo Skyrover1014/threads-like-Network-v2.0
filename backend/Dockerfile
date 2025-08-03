@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
 
 # ---------- runtime: test ----------
 FROM base AS runtime-test
-ENV DJANGO_SETTINGS_MODULE=core.prod_settings
+ENV DJANGO_SETTINGS_MODULE=core.settings
 ENV PYTHONPATH=/app
 COPY --from=builder-test $VENV_PATH $VENV_PATH
 COPY manage.py /app/
@@ -67,7 +67,7 @@ RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
 
 # ---------- runtime: prod ----------
 FROM base AS runtime-prod
-ENV DJANGO_SETTINGS_MODULE=core.prod_settings
+ENV DJANGO_SETTINGS_MODULE=core.settings
 COPY --from=builder-prod $VENV_PATH $VENV_PATH
 COPY manage.py /app/
 COPY core /app/core

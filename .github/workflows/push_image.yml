@@ -80,10 +80,10 @@ jobs:
 
       - name: Tag image
         run: |
-          docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:v1.2.1
+          docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:v1.3.0
         working-directory: ./backend
 
       - name: Push image to ECR
         run: |
-          docker push ${{ secrets.ECR_REPO_URL }}:v1.2.1
+          docker push ${{ secrets.ECR_REPO_URL }}:v1.3.0
         working-directory: ./backend
