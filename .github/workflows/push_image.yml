@@ -42,14 +42,14 @@ jobs:
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
-            echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> .env
-            echo "DATABASE_NAME=${DATABASE_NAME}" >> .env
-            echo "DATABASE_USER=${DATABASE_USER}" >> .env
-            echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> .env
-            echo "DATABASE_HOST=${DATABASE_HOST}" >> .env
-            echo "DATABASE_PORT=${DATABASE_PORT}" >> .env
-            echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> .env
-            echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> .env
+            echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
+            echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
+            echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
+            echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> backend/.env
+            echo "DATABASE_HOST=${DATABASE_HOST}" >> backend/.env
+            echo "DATABASE_PORT=${DATABASE_PORT}" >> backend/.env
+            echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> backend/.env
+            echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> backend/.env
             echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
             echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> backend/.env
             echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> backend/.env
@@ -80,10 +80,10 @@ jobs:
 
       - name: Tag image
         run: |
-          docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:v1.2.1
+          docker tag web-prod:latest ${{ secrets.ECR_REPO_URL }}:v1.3.0
         working-directory: ./backend
 
       - name: Push image to ECR
         run: |
-          docker push ${{ secrets.ECR_REPO_URL }}:v1.2.1
+          docker push ${{ secrets.ECR_REPO_URL }}:v1.3.0
         working-directory: ./backend
