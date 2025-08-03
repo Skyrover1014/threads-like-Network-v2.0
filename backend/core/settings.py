@@ -12,7 +12,7 @@ DEBUG = (ENV != "prod")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ALLOWED_HOSTS = ["16.176.207.104", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["3.26.225.207", "localhost", "127.0.0.1"]
 
 
 # Application definition
