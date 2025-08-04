@@ -57,7 +57,7 @@ jobs:
           docker compose -f docker-compose.yml up --build --detach --wait
           docker compose exec -T web-dev python manage.py check
           docker compose exec -T web-dev bash -c "python manage.py migrate"
-          docker compose exec -T web-dev bash -c "python manage.py shell -c 'from threads.tasks import add; result=add.delay(1,2).get(); print('⮕ Celery test result =', result)'"
+          docker compose exec -T web-dev bash -c 'python manage.py shell -c "from threads.tasks import add; result=add.delay(1,2).get(); print(\"⮕ Celery test result =\", result)"'
 
 
       - name: Tear down
