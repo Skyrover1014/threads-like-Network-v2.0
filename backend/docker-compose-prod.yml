@@ -1,5 +1,5 @@
 services:
-  db-prod:
+  db-test:
     image: postgres:15
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -36,7 +36,7 @@ services:
     depends_on:
       redis-test:
         condition: service_healthy
-      db-prod:
+      db-test:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
@@ -58,7 +58,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles
     depends_on:
-      db-prod:
+      db-test:
         condition: service_healthy
       redis-test:
         condition: service_healthy
