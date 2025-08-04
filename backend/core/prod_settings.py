@@ -63,15 +63,7 @@ REST_FRAMEWORK = {
     # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# SPECTACULAR_SETTINGS = {
-#     'TITLE': 'Threads API',
-#     'DESCRIPTION': 'API for the Threads app',
-#     'VERSION': '1.0.0',
-#     'SERVE_INCLUDE_SCHEMA': False,
-#     'ENUM_NAME_OVERRIDES': {
-#         'threads.domain.enum.ContentTypeEnum': 'UnifiedContentTypeEnum',
-#     }
-# }
+
 
 MIDDLEWARE = [
     # 'silk.middleware.SilkyMiddleware',
