@@ -21,6 +21,7 @@ jobs:
       
       - name: Set env vars
         env:
+          ENV: ${{ vars.ENV }}
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           DATABASE_NAME: ${{ vars.DATABASE_NAME }}
           DATABASE_USER: ${{ vars.DATABASE_USER }}
@@ -37,6 +38,7 @@ jobs:
 
 
         run: |
+          echo "ENV=${ENV}" >> backend/.env
           echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
           echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
           echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
