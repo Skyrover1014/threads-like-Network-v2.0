@@ -73,13 +73,6 @@ services:
       - "80:80"
     depends_on:
       - web-prod
-
-  
-
-  
-
-
-
 volumes:
   postgres_data_prod:
   static_volume:
