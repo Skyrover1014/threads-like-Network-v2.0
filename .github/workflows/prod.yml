@@ -1,13 +1,13 @@
 name: Prod Smoke Test
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    environment: test
+    environment: prod
     services:
         docker: # optional，GitHub 已預裝 Docker
           image: docker:24.0.6
@@ -20,6 +20,7 @@ jobs:
 
       - name: Set env vars
         env:
+          ENV: ${{ vars.ENV }}
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           DATABASE_NAME: ${{ vars.DATABASE_NAME }}
           DATABASE_USER: ${{ vars.DATABASE_USER }}
@@ -31,7 +32,11 @@ jobs:
           POSTGRES_DB: ${{ vars.POSTGRES_DB }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          CELERY_BROKER_URL: ${{ vars.CELERY_BROKER_URL }}
+          CELERY_RESULT_BACKEND: ${{ vars.CELERY_RESULT_BACKEND}}
+
         run: |
+            echo "ENV=${ENV}" >> backend/.env
             echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
             echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
             echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
@@ -43,10 +48,12 @@ jobs:
             echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
             echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
             echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
+            echo "CELERY_BROKER_URL=${CELERY_BROKER_URL}" >> backend/.env
+            echo "CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}" >> backend/.env
       
       - name: Start containers to verify services
         run: |
-            docker compose -f docker-compose-prod.yml up --build --detach --wait --wait-timeout 60
+            docker compose -f docker-compose-prod.yml up --build --detach --wait
         working-directory: ./backend
 
       - name: Tear down containers before build

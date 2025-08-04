@@ -1,16 +1,4 @@
 services:
-  web-dev:  # dev
-    build:
-      context: .
-      target: runtime-dev
-    command: python manage.py runserver 0.0.0.0:8000
-    env_file: .env
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db-dev
   db-dev:
     image: postgres:15
     environment:
@@ -26,6 +14,60 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+  
+  redis-dev:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+  celery-dev:
+    build:
+      context: .
+      target: runtime-dev
+    command: python -m celery -A core worker --loglevel=info --concurrency=2
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      redis-dev:
+        condition: service_healthy
+      db-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+  web-dev:  # dev
+    build:
+      context: .
+      target: runtime-dev
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file: .env
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+      celery-dev:
+        condition: service_healthy
+
+    
+
+
+
+
 
 volumes:
   postgres_data:
