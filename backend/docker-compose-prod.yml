@@ -14,7 +14,7 @@ services:
       - postgres_data_prod:/var/lib/postgresql/data
     ports:
       - "5432:5432" 
-  redis-prod:
+  redis-test:
     image: redis:7
     ports:
       - "6379:6379"
@@ -34,7 +34,7 @@ services:
     env_file:
       - .env
     depends_on:
-      redis-prod:
+      redis-test:
         condition: service_healthy
       db-prod:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
     depends_on:
       db-prod:
         condition: service_healthy
-      redis-prod:
+      redis-test:
         condition: service_healthy
       celery-prod:
         condition: service_healthy
