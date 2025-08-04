@@ -1,5 +1,5 @@
 services:
-  db-test:
+  db-prod:
     image: postgres:15
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -14,7 +14,7 @@ services:
       - postgres_data_prod:/var/lib/postgresql/data
     ports:
       - "5432:5432" 
-  redis-test:
+  redis-prod:
     image: redis:7
     ports:
       - "6379:6379"
@@ -34,9 +34,9 @@ services:
     env_file:
       - .env
     depends_on:
-      redis-test:
+      redis-prod:
         condition: service_healthy
-      db-test:
+      db-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
@@ -58,9 +58,9 @@ services:
     volumes:
       - static_volume:/app/staticfiles
     depends_on:
-      db-test:
+      db-prod:
         condition: service_healthy
-      redis-test:
+      redis-prod:
         condition: service_healthy
       celery-prod:
         condition: service_healthy

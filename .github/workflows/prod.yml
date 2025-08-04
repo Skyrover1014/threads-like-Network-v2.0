@@ -1,13 +1,13 @@
 name: Prod Smoke Test
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    environment: test
+    environment: prod
     services:
         docker: # optional，GitHub 已預裝 Docker
           image: docker:24.0.6
