@@ -11,6 +11,7 @@ services:
       - "8000:8000"
     depends_on:
       - db-dev
+      - redis-dev
   db-dev:
     image: postgres:15
     environment:
@@ -26,6 +27,25 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    
+  redis-dev:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  celery-dev:
+    build:
+      context: .
+      target: runtime-dev
+    command: python -m celery -A core worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis-dev
+      - web-dev
+
 
 volumes:
   postgres_data:

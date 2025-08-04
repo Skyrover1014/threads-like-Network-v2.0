@@ -13,6 +13,8 @@ services:
       - static_volume:/app/staticfiles
     depends_on:
       - db-prod
+      - redis-prod
+
 
   nginx-prod:
     image: nginx:latest
@@ -39,6 +41,24 @@ services:
       - postgres_data_prod:/var/lib/postgresql/data
     ports:
       - "5432:5432" 
+
+  redis-prod:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  celery-prod:
+    build:
+      context: .
+      target: runtime-prod
+    command: python -m celery -A core worker --loglevel=info --concurrency=2
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis-prod
+      - web-prod
 
 volumes:
   postgres_data_prod:
