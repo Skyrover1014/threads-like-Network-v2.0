@@ -98,5 +98,5 @@ jobs:
       - name: Push image to ECR
         run: |
           docker push ${{ secrets.ECR_REPO_URL }}:v0.0.2
-          docker push ${{ secrets.ECR_REPO_URL }}:v0.0.1
+          docker push ${{ secrets.ECR_REPO_URL }}:celery-v0.0.1
         working-directory: ./backend
