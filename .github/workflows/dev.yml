@@ -34,6 +34,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           CELERY_BROKER_URL: ${{ vars.CELERY_BROKER_URL }}
           CELERY_RESULT_BACKEND: ${{ vars.CELERY_RESULT_BACKEND}}
+          REDIS_URL: ${{ vars.REDIS_URL}}
 
         run: |
           echo "ENV=${ENV}" >> backend/.env
@@ -50,6 +51,7 @@ jobs:
           echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
           echo "CELERY_BROKER_URL=${CELERY_BROKER_URL}" >> backend/.env
           echo "CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}" >> backend/.env
+          echo "REDIS_URL=${REDIS_URL}" >> backend/.env
 
       - name: Build and start containers with smock check and migrate
         working-directory: ./backend
