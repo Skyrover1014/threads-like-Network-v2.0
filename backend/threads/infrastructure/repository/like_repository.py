@@ -16,7 +16,6 @@ from typing import Optional, List, Union, Literal
 from django.db.models import F
 
 class LikeBaseRepository:
-    
     def _decode_orm_like(self, db_like: Union[DatabaseLikePost, DatabaseLikeComment]) -> DomainLike:
         if isinstance(db_like, DatabaseLikePost):
             try:

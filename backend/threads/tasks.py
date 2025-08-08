@@ -20,7 +20,6 @@ def flush_comment_counts():
     from threads.models import Post, Comment
 
     with redis_client.lock(LOCK_KEY, timeout=10):
-    # 找出所有有計數的 post key
         for key in redis_client.scan_iter(match="post:*"):
             logger.info("Flush sees key %s", key)
             post_id = key.decode().split(":", 1)[1]
@@ -29,10 +28,9 @@ def flush_comment_counts():
                 Post.objects.filter(id=post_id).update(
                     comments_count=F("comments_count") + delta
                 )
-                # 重置或刪除計數欄位
-                redis_client.hdel(key, "comments_count")
+                redis_client.hdel(key, "comments_count") # 重置或刪除計數欄位
+
         
-        # 處理留言(model Comment)的 comments_count 增量
         for key in redis_client.scan_iter(match="comment:*"):
             logger.info("Flush sees key %s", key)
             comment_id = key.decode().split(":", 1)[1]
