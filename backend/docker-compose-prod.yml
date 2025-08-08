@@ -44,6 +44,20 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+  celery-beat:
+    build:
+      context: .
+      target: runtime-prod
+    command: celery -A core beat --loglevel=INFO
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      redis-prod:
+        condition: service_healthy
+      db-prod:
+        condition: service_healthy
 
   web-prod:  # prod
     build:

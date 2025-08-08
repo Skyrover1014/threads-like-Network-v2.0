@@ -84,17 +84,9 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
     
     def delete_post(self, post: DomainPost) -> None:
         try:
-            with transaction.atomic():
-                if post.is_repost == True:
-                    self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= -1)
-                
-                db_post = DatabasePost.objects.filter(id=post.id).delete()
+            db_post = DatabasePost.objects.filter(id=post.id).delete()
         except DatabaseError as e:
             raise EntityOperationFailed(message="資料庫操作失敗")
-        except InvalidOperation as e:
-            raise
-        except InvalidEntityInput as e:
-            raise
         return None
     
     
@@ -174,21 +166,15 @@ class PostRepositoryImpl(PostRepository, ContentBaseRepository):
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
         
         try:
-            with transaction.atomic():
-                db_post = DatabasePost.objects.create(
-                    author_id=post.author_id,
-                    content=post.content,
-                    is_repost= post.is_repost,
-                    repost_of_content_type= repost_of_content_type,
-                    repost_of_content_item_id= post.repost_of
-                    )
-                self.adjust_reposts_count(post.repost_of, post.repost_of_content_type, delta= 1)
+            db_post = DatabasePost.objects.create(
+                author_id=post.author_id,
+                content=post.content,
+                is_repost= post.is_repost,
+                repost_of_content_type= repost_of_content_type,
+                repost_of_content_item_id= post.repost_of
+            )
         except DatabaseError as e:
-            raise EntityOperationFailed(message="資料庫操作失敗")            
-        except InvalidEntityInput as e:
-            raise
-        except InvalidOperation as e:
-            raise
+            raise EntityOperationFailed(message="資料庫操作失敗")        
             
         try:
             db_post = DatabasePost.objects.select_related("author").get(id = db_post.id)

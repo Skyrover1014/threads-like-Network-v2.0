@@ -1,4 +1,3 @@
-# threads/utils/dev_tools.py
 from django.conf import settings
 
 if settings.DEBUG:

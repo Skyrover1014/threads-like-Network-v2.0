@@ -27,9 +27,5 @@ class DeleteComment:
         
         try:
             return self.comment_repository.delete_comment(target_domain_comment)
-        except InvalidEntityInput as e:
-            raise InvalidObject(message=e.message)
-        except InvalidOperation as e:
-            raise InvalidObject(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable(message=e.message)

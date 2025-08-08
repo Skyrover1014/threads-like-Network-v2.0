@@ -16,6 +16,7 @@ ALLOWED_HOSTS = ["3.26.225.207", "localhost", "127.0.0.1"]
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
+REDIS_URL = os.getenv("REDIS_URL")
 
 # Application definition
 INSTALLED_APPS = [

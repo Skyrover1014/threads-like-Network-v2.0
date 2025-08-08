@@ -29,7 +29,7 @@ services:
     build:
       context: .
       target: runtime-dev
-    command: python -m celery -A core worker --loglevel=info --concurrency=2
+    command: python -m celery -A core worker --loglevel=INFO --concurrency=2
     volumes:
       - .:/app
     env_file:
@@ -45,6 +45,20 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+  celery-beat:
+    build:
+      context: .
+      target: runtime-dev
+    command: celery -A core beat --loglevel=INFO
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      redis-dev:
+        condition: service_healthy
+      db-dev:
+        condition: service_healthy
   web-dev:  # dev
     build:
       context: .

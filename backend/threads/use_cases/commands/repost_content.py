@@ -126,10 +126,10 @@ class CreateRePost:
             created_repost = create_func(repost_entity)
         except InvalidEntityInput as e:
             raise InvalidObject(message=e.message)
-        except InvalidOperation as e:
-            raise InvalidObject(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable(message=e.message)
+        except InvalidOperation as e:
+            raise InvalidObject(message=e.message)
             
 
         return RepostResult(repost=created_repost, original=original)
