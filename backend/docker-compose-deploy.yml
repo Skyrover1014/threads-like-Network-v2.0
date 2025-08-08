@@ -25,12 +25,8 @@ services:
       start_period: 10s
       retries: 3
   celery-prod:
-    build:
-      context: .
-      target: runtime-prod
+    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:celery-v1.0.0
     command: python -m celery -A core worker --loglevel=info --concurrency=2
-    volumes:
-      - .:/app
     env_file:
       - .env
     depends_on:
@@ -45,7 +41,7 @@ services:
       start_period: 10s
       retries: 3
   web-prod:
-    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:v1.3.2
+    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:v2.0.0
     command: >
       sh -c "python manage.py collectstatic --noinput --settings=core.settings &&
         gunicorn core.wsgi:application --bind 0.0.0.0:8000"

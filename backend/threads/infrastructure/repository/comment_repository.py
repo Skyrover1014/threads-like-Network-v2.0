@@ -46,20 +46,17 @@ class CommentRepositoryImpl(CommentRepository, ContentBaseRepository):
         if comment.parent_comment_id and not DatabaseComment.objects.filter(id=comment.parent_comment_id).exists():
             raise EntityDoesNotExist(message="留言不存在")
         try:
-            with transaction.atomic():
-                db_comment = DatabaseComment.objects.create(
-                    author_id = comment.author_id,
-                    content = comment.content,
-                    parent_post_id = comment.parent_post_id,
-                    parent_comment_id = comment.parent_comment_id
-                )
-                self.adjust_comments_count(parent_post_id=comment.parent_post_id, parent_comment_id=comment.parent_comment_id, delta= 1)
+            db_comment = DatabaseComment.objects.create(
+                author_id = comment.author_id,
+                content = comment.content,
+                parent_post_id = comment.parent_post_id,
+                parent_comment_id = comment.parent_comment_id
+            )
         except IntegrityError:
             raise EntityOperationFailed(message="資料庫欄位錯誤")
         except DatabaseError:
             raise EntityOperationFailed(message="資料庫操作失敗")
-        except InvalidOperation as e:
-            raise
+        
         try: 
             db_comment = (
                 DatabaseComment.objects
@@ -101,17 +98,7 @@ class CommentRepositoryImpl(CommentRepository, ContentBaseRepository):
     
     def delete_comment(self, comment: DomainComment) -> None:
         try:
-            with transaction.atomic():
-                if comment.is_repost == True:
-                    self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta= -1)
-                   
-                self.adjust_comments_count(parent_post_id=comment.parent_post_id, parent_comment_id=comment.parent_comment_id, delta= -1)
-                DatabaseComment.objects.filter(id = comment.id).delete()
-
-        except InvalidOperation as e:
-            raise
-        except InvalidEntityInput as e:
-            raise
+            DatabaseComment.objects.filter(id = comment.id).delete()
         except DatabaseError:
             raise EntityOperationFailed(message="資料庫操作失敗")
 
@@ -169,33 +156,21 @@ class CommentRepositoryImpl(CommentRepository, ContentBaseRepository):
         except ValueError as e:
             raise InvalidOperation(message="轉換 ContentType 失敗") from e
         try:    
-            with transaction.atomic():
-                db_comment = DatabaseComment.objects.create(
-                    author_id=comment.author_id,
-                    content=comment.content,
-                    is_repost= comment.is_repost,
-                    repost_of_content_type= repost_of_content_type,
-                    repost_of_content_item_id= comment.repost_of,
-                    parent_post_id=comment.parent_post_id,
-                    parent_comment_id = comment.parent_comment_id
-                )
-                self.adjust_comments_count(parent_post_id=comment.parent_post_id, parent_comment_id=comment.parent_comment_id, delta= 1)
-                self.adjust_reposts_count(comment.repost_of, comment.repost_of_content_type, delta=1)
-        
+            db_comment = DatabaseComment.objects.create(
+                author_id=comment.author_id,
+                content=comment.content,
+                is_repost= comment.is_repost,
+                repost_of_content_type= repost_of_content_type,
+                repost_of_content_item_id= comment.repost_of,
+                parent_post_id=comment.parent_post_id,
+                parent_comment_id = comment.parent_comment_id
+            )
         except DatabaseError as e:
             raise EntityOperationFailed(message="資料庫操作失敗")
-        except InvalidEntityInput as e:
-            raise
-        except InvalidEntityInput as e:
-            raise
-        except InvalidOperation as e:
-            raise    
-        
         try:
             db_comment = DatabaseComment.objects.select_related("author","parent_post","parent_comment").get(id=db_comment.id)
         except DatabaseError:
             raise EntityOperationFailed(message="資料庫操作失敗")
-        
         try:
             return self._decode_orm_comment(db_comment)
         except InvalidEntityInput as e:

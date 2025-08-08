@@ -98,42 +98,6 @@ class ContentBaseRepository:
             raise InvalidEntityInput(message="Comment 資料不符合規則")
         except TypeError as e:
             raise InvalidEntityInput(message=f"封裝 Comment 失敗: {str(e)}")
-    
-    def adjust_reposts_count(self, repost_of: int, repost_of_content_type:str, delta:int):
-        if not isinstance(delta, int):
-            raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
-        
-        databases = {
-            "post": DatabasePost,
-            "comment": DatabaseComment
-        }
-
-        model = databases.get(repost_of_content_type)
-        print(f"轉發類型2{model}",flush=True)
-        
-        if model is None:
-            raise InvalidEntityInput(message="不支援的轉發來源類型")
-        try:
-            model.objects.filter(id=repost_of).update(
-                reposts_count = F("reposts_count") + delta
-            )
-        except DatabaseError as e:
-            raise InvalidOperation(message="錯誤的快取變動")
-
-    def adjust_comments_count(self, parent_post_id:int, parent_comment_id:int, delta:int):
-        if not isinstance(delta, int):
-            raise InvalidOperation (message=f"快取更新必需是整數1/-1，但收到的是 {type(delta).__name__}")
-        
-        try:
-            if parent_comment_id:
-                DatabaseComment.objects.filter(id=parent_comment_id).update(
-                    comments_count = F("comments_count") + delta 
-                )
-            DatabasePost.objects.filter(id=parent_post_id).update(
-                comments_count = F("comments_count") + delta  
-            )
-        except DatabaseError as e:
-            raise InvalidOperation(message="錯誤的快取變動")
 
     def _annotate_is_liked_for_content(self, content_type:str, auth_user_id:int):
         databases = {

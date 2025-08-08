@@ -24,7 +24,5 @@ class CreateComment:
             raise NotFound(message=e.message)
         except EntityOperationFailed as e:
             raise ServiceUnavailable(message=e.message)
-        except InvalidOperation as e:
-            raise InvalidObject(message=e.message)
         except InvalidEntityInput as e:
             raise InvalidObject(message=e.message)
