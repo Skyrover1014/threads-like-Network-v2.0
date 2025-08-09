@@ -66,7 +66,7 @@ if DEBUG:
   MIDDLEWARE.insert(0, 'silk.middleware.SilkyMiddleware')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite 的預設 dev server
+    "http://localhost:5173", 
 ]
 
 ROOT_URLCONF = 'core.urls'
