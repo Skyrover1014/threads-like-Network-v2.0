@@ -20,7 +20,6 @@ services:
       start_period: 10s
       retries: 3
   
-  # 先用 init job 把 static 填進 volume（若用 Nginx 讀本機靜態）
   init-static:
     image: web:${TAG}
     command: python manage.py collectstatic --noinput
