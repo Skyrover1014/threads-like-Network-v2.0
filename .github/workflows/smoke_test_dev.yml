@@ -84,6 +84,7 @@ jobs:
           curl -sf http://localhost:80/healthz
       
       - name: Dump nginx effective config
+        working-directory: ./backend
         run: docker compose -f docker-compose-smoke-test.yml exec -T nginx nginx -T
       
       - name: Run smoke tests
