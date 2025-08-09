@@ -82,7 +82,10 @@ jobs:
         run: |
           TAG=${TAG} docker compose -f docker-compose-smoke-test.yml up -d --wait
           curl -sf http://localhost:80/healthz
-
+      
+      - name: Dump nginx effective config
+        run: docker compose -f docker-compose-smoke-test.yml exec -T nginx nginx -T
+      
       - name: Run smoke tests
         run: |
           curl -sf http://localhost/healthz
