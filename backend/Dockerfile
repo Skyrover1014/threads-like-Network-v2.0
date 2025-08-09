@@ -25,7 +25,6 @@ FROM builder-base AS builder-dev
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
     poetry install --with dev --no-root --without test
 
- 
 # ---------- runtime: dev ----------
 FROM base AS runtime-dev
 ENV DJANGO_SETTINGS_MODULE=core.settings
@@ -34,7 +33,6 @@ COPY manage.py /app/
 COPY core /app/core
 COPY threads /app/threads
 WORKDIR /app
-# 開發常用：volume、熱重新載入就交給 docker-compose 設
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
@@ -59,20 +57,30 @@ WORKDIR /app
 EXPOSE 8000
 
 
-# ---------- builder: prod ----------
-FROM builder-base AS builder-prod
+
+# ---------- builder: deployment  ----------
+FROM builder-base AS builder-deployment
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
     poetry install --no-dev
 
 
-# ---------- runtime: prod ----------
-FROM base AS runtime-prod
+# ---------- runtime: web ----------
+FROM base AS runtime-web
 ENV DJANGO_SETTINGS_MODULE=core.settings
-COPY --from=builder-prod $VENV_PATH $VENV_PATH
+COPY --from=builder-deployment $VENV_PATH $VENV_PATH
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 COPY manage.py /app/
 COPY core /app/core
 COPY threads /app/threads
-COPY nginx /app/nginx
 WORKDIR /app
 EXPOSE 8000
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
+
+
+# ---------- runtime: celery ----------
+FROM runtime-web AS runtime-celery
+CMD ["python", "-m", "celery", "-A", "core", "worker", "--loglevel=INFO", "--concurrency=2"]
+
+# ---------- runtime: celery-beat ----------
+FROM runtime-web AS runtime-celery-beat
+CMD ["celery", "-A", "core", "beat", "--loglevel=INFO"]
