@@ -7,7 +7,7 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-ENV = os.getenv("ENV", "dev")  # dev 或 prod
+ENV = os.getenv("ENV", "dev")
 DEBUG = (ENV == "dev")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

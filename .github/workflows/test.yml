@@ -6,7 +6,6 @@ on:
   push:
     branches: 
         - '**'
-    branches-ignore: ["main", "dev" ]
 
 jobs:
   test:
