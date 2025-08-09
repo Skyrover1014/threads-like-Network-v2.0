@@ -2,16 +2,18 @@ name: CI test
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ "main", "dev" ]
   push:
-    branches: [dev]
+    branches: 
+        - '**'
+    branches-ignore: ["main", "dev" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     environment: test
     services:
-      docker: # optional，GitHub 已預裝 Docker
+      docker: 
         image: docker:24.0.6
         options: --privileged
 

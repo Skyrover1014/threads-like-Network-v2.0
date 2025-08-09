@@ -20,11 +20,13 @@ RUN --mount=type=cache,target=/root/.cache \
 WORKDIR $PYSETUP_PATH
 COPY pyproject.toml poetry.lock* ./
 
+
+
+
 # ---------- builder: dev ----------
 FROM builder-base AS builder-dev
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
     poetry install --with dev --no-root --without test
-
 # ---------- runtime: dev ----------
 FROM base AS runtime-dev
 ENV DJANGO_SETTINGS_MODULE=core.settings
@@ -41,8 +43,6 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM builder-base AS builder-test
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
     poetry install --with test --no-root --without dev
-
-
 # ---------- runtime: test ----------
 FROM base AS runtime-test
 ENV DJANGO_SETTINGS_MODULE=core.settings
@@ -75,12 +75,9 @@ COPY threads /app/threads
 WORKDIR /app
 EXPOSE 8000
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
-
-
 # ---------- runtime: celery ----------
 FROM runtime-web AS runtime-celery
 CMD ["python", "-m", "celery", "-A", "core", "worker", "--loglevel=INFO", "--concurrency=2"]
-
 # ---------- runtime: celery-beat ----------
 FROM runtime-web AS runtime-celery-beat
 CMD ["celery", "-A", "core", "beat", "--loglevel=INFO"]
