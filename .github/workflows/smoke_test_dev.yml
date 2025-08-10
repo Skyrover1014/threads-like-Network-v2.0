@@ -81,7 +81,7 @@ jobs:
         working-directory: ./backend
         run: |
           TAG=${TAG} docker compose -f docker-compose-smoke-test.yml up -d --wait
-          curl -sf http://localhost:80/healthz
+          curl -fsS http://127.0.0.1:8080/healthz
       
       - name: Dump nginx effective config
         working-directory: ./backend
@@ -92,7 +92,7 @@ jobs:
         run: |
           curl -fsS http://127.0.0.1:8080/healthz
           curl -fsSI http://127.0.0.1:8080/static/
-          curl -sf -H "Host: localhost" http://localhost/healthz
+          curl -fsS  -H "Host: localhost" http://127.0.0.1:8080/healthz
   
       - name: Tear down
         if: always()
