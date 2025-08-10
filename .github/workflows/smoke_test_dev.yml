@@ -90,7 +90,7 @@ jobs:
       - name: Run smoke tests
         working-directory: ./backend
         run: |
-          curl -fsSI http://127.0.0.1:8080/static/
+           curl -fsSI http://127.0.0.1:8080/static/admin/css/base.css
   
       - name: Tear down
         if: always()
