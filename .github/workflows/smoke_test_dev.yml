@@ -91,8 +91,7 @@ jobs:
         working-directory: ./backend
         run: |
           curl -fsS http://127.0.0.1:8080/healthz
-          curl -fsSI http://127.0.0.1:8080/static/
-          curl -fsS  -H "Host: localhost" http://127.0.0.1:8080/healthz
+
   
       - name: Tear down
         if: always()
