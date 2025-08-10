@@ -24,6 +24,7 @@ services:
     image: web:${TAG}
     command: python manage.py collectstatic --noinput
     env_file: .env
+    volumes: [ static_volume:/app/staticfiles ]
     depends_on: 
       db:
         condition: service_healthy
@@ -73,7 +74,8 @@ services:
   nginx:
     image: nginx:${TAG}
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
+    volumes: [ static_volume:/app/staticfiles:ro ]
     depends_on:
       web:
         condition: service_healthy
@@ -82,3 +84,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+volumes:
+  static_volume:
