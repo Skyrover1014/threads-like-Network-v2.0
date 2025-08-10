@@ -88,9 +88,10 @@ jobs:
         run: docker compose -f docker-compose-smoke-test.yml exec -T nginx nginx -T
       
       - name: Run smoke tests
+        working-directory: ./backend
         run: |
-          curl -sf http://localhost/healthz
-          curl -sfI http://localhost/static/ 
+          curl -fsS http://127.0.0.1:8080/healthz
+          curl -fsSI http://127.0.0.1:8080/static/
           curl -sf -H "Host: localhost" http://localhost/healthz
   
       - name: Tear down

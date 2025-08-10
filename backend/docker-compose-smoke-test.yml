@@ -74,7 +74,7 @@ services:
   nginx:
     image: nginx:${TAG}
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
     volumes: [ static_volume:/app/staticfiles:ro ]
     depends_on:
       web:
