@@ -22,6 +22,7 @@ jobs:
           TARGET_ENVIRONMENT: prod
           APPROVED_DEV_TAG: ${{ inputs.image_tag }}
         with:
+          github-token: ${{ secrets.GH_ENV_TOKEN }}
           script: |
             const environmentName = process.env.TARGET_ENVIRONMENT;
             const variableName = 'APPROVED_DEV_TAG';
