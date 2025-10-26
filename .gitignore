@@ -25,3 +25,5 @@ build/
 
 # 其他
 *.bak
+
+conf/

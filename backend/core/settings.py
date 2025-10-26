@@ -4,17 +4,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-ENV = os.getenv("ENV", "dev")  # dev 或 prod
-DEBUG = (ENV == "dev")
+ENV = os.getenv("ENV", "feature-dev")
+DEBUG = (ENV == "feature-dev")
+print(f"DEBUG: {DEBUG}")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-ALLOWED_HOSTS = ["3.26.225.207", "localhost", "127.0.0.1"]
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081,http://0.0.0.0:8081").split(",")
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173", 
+]
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
 REDIS_URL = os.getenv("REDIS_URL")
 
@@ -65,9 +73,6 @@ if DEBUG:
   INSTALLED_APPS.append('drf_spectacular')
   MIDDLEWARE.insert(0, 'silk.middleware.SilkyMiddleware')
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite 的預設 dev server
-]
 
 ROOT_URLCONF = 'core.urls'
 

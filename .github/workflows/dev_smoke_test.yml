@@ -1,0 +1,172 @@
+name: (Test) perform smoke test in dev environment and push images to ECR
+
+on:
+  push:
+    branches: [dev]
+
+# permissions:
+#   contents: read
+#   actions: write
+
+jobs:
+  dev:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      TAG: ${{ github.sha }}
+      ECR_REPO:  ${{ secrets.ECR_REPO_URL }}
+
+    services:
+      docker:
+        image: docker:24.0.6
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set env vars and write .env
+        env:
+          ENV: ${{ vars.ENV }}
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          DATABASE_NAME: ${{ vars.DATABASE_NAME }}
+          DATABASE_USER: ${{ vars.DATABASE_USER }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_HOST: ${{ vars.DATABASE_HOST }}
+          DATABASE_PORT: ${{ vars.DATABASE_PORT }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          CELERY_BROKER_URL: ${{ vars.CELERY_BROKER_URL }}
+          CELERY_RESULT_BACKEND: ${{ vars.CELERY_RESULT_BACKEND}}
+          REDIS_URL: ${{ vars.REDIS_URL}}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+
+        run: |
+          cat <<EOF > backend/.env
+          ENV=${ENV}
+          DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+          DATABASE_NAME=${DATABASE_NAME}
+          DATABASE_USER=${DATABASE_USER}
+          DATABASE_PASSWORD=${DATABASE_PASSWORD}
+          DATABASE_HOST=${DATABASE_HOST}
+          DATABASE_PORT=${DATABASE_PORT}
+          OPENAI_API_KEY=${OPENAI_API_KEY}
+          SERPAPI_API_KEY=${SERPAPI_API_KEY}
+          CELERY_BROKER_URL=${CELERY_BROKER_URL}
+          CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+          REDIS_URL=${REDIS_URL}
+          EOF
+
+          mkdir -p backend/conf/dev
+          cat <<EOF > backend/conf/dev/.env
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          EOF
+
+      - name: Build Images of Web, Celery and Celery Beat
+        working-directory: ./backend
+        run: |
+          docker build --target runtime-web -t web:${TAG} .
+          docker build --target runtime-celery -t celery:${TAG} .
+          docker build --target runtime-celery-beat -t celery-beat:${TAG} .
+         
+      - name: Build Image of Nginx
+        working-directory: ./backend/nginx
+        run: |
+          docker build -t nginx:${TAG} .
+      
+      - name: Docker compose up container and perform health check in the each contianer
+        working-directory: ./backend
+        run: |
+          TAG=${TAG} docker compose -f docker-compose-smoke-test.yml up -d --wait
+          
+      
+      - name: Dump nginx effective config
+        working-directory: ./backend
+        run: docker compose -f docker-compose-smoke-test.yml exec -T nginx nginx -T
+      
+      - name: Run smoke tests
+        working-directory: ./backend
+        run: |
+           curl -fsS http://127.0.0.1:8081/healthz
+           curl -fsSI http://127.0.0.1:8081/static/admin/css/base.css
+  
+      - name: Tear down
+        if: always()
+        working-directory: ./backend
+        run: docker compose -f docker-compose-smoke-test.yml down -v
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2 
+      
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-southeast-2 | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-2.amazonaws.com
+    
+      - name: Retag images
+        working-directory: ./backend
+        run: |
+          docker tag web:${TAG} $ECR_REPO:web-${TAG}
+          docker tag celery:${TAG} $ECR_REPO:celery-${TAG}
+          docker tag celery-beat:${TAG} $ECR_REPO:celery-beat-${TAG}
+      
+      - name: Retag nginx
+        working-directory: ./backend
+        run: |
+          docker tag nginx:${TAG} $ECR_REPO:nginx-${TAG}
+
+      - name: Push images to ECR
+        working-directory: ./backend
+        run: |
+          docker push $ECR_REPO:web-${TAG}
+          docker push $ECR_REPO:celery-${TAG}
+          docker push $ECR_REPO:celery-beat-${TAG}
+      
+      - name: Push nginx
+        working-directory: ./backend
+        run: docker push $ECR_REPO:nginx-${TAG}
+
+      # - name: Promote prod DEV_IMAGE_TAG
+      #   if: ${{ success() }}
+      #   uses: actions/github-script@v7
+      #   env:
+      #     TARGET_ENVIRONMENT: prod
+      #     DEV_IMAGE_TAG: ${{ github.sha }}
+      #   with:
+      #     script: |
+      #       const environmentName = process.env.TARGET_ENVIRONMENT;
+      #       const variableName = 'DEV_IMAGE_TAG';
+      #       const value = process.env.DEV_IMAGE_TAG;
+      #       const { owner, repo } = context.repo;
+
+      #       try {
+      #         await github.request('PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}', {
+      #           owner,
+      #           repo,
+      #           environment_name: environmentName,
+      #           name: variableName,
+      #           value,
+      #         });
+      #         core.info(`Updated ${variableName} for ${environmentName} to ${value}`);
+      #       } catch (error) {
+      #         if (error.status === 404) {
+      #           await github.request('POST /repos/{owner}/{repo}/environments/{environment_name}/variables', {
+      #             owner,
+      #             repo,
+      #             environment_name: environmentName,
+      #             name: variableName,
+      #             value,
+      #           });
+      #           core.info(`Created ${variableName} for ${environmentName} with value ${value}`);
+      #         } else {
+      #           core.setFailed(`Failed to update ${variableName}: ${error.message}`);
+      #         }
+      #       }

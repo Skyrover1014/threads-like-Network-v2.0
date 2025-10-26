@@ -1,22 +1,17 @@
 services:
-  db-test:
+  db:
     image: postgres:15
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data_test:/var/lib/postgresql/data
+    env_file: conf/test/.env
     ports: 
       - "5432:5432" 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       start_period: 20s
       retries: 5
   
-  redis-test:
+  redis:
     image: redis:7
     ports: 
       - "6379:6379"
@@ -27,7 +22,7 @@ services:
       start_period: 10s
       retries: 3
 
-  celery-test:
+  celery:
     build:
       context: .
       target: runtime-test
@@ -36,9 +31,9 @@ services:
       - .:/app
     env_file: .env
     depends_on:
-      redis-test:
+      redis:
         condition: service_healthy
-      db-test:
+      db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
@@ -54,27 +49,22 @@ services:
     command: celery -A core beat --loglevel=INFO
     volumes:
       - .:/app
-    env_file:
-      - .env
+    env_file: .env
     depends_on:
-      redis-test:
+      redis:
         condition: service_healthy
-      db-test:
+      db:
         condition: service_healthy
-  web-test:  # test
+  web:  # test
     build:
       context: .
       target: runtime-test
     command: pytest -v --maxfail=1 --disable-warnings
     env_file: .env
     depends_on:
-      db-test:
+      db:
         condition: service_healthy
-      redis-test:
+      redis:
         condition: service_healthy
-      celery-test:
+      celery:
         condition: service_healthy
-
-volumes:
-  postgres_data_test:
-  static_volume:

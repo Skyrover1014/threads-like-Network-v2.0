@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .cache/
+scripts/
 
 # 若只在 builder 階段用到，可排除避免 runtime image 多餘內容
 
@@ -26,6 +27,7 @@ htmlcov/
 .env.*
 *.pem
 *.key
+conf/
 
 # ==== Docker & Compose files ====
 Dockerfile

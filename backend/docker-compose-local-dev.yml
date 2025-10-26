@@ -1,0 +1,80 @@
+name: threads-dev
+
+services:
+  db:
+    image: postgres:15
+    container_name: threads-dev-db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - conf/dev/.env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7
+    container_name: threads-dev-redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  web:  # dev
+    build:
+      context: .
+      target: runtime-dev
+    container_name: threads-dev-web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    env_file: conf/dev/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  celery:
+    build:
+      context: .
+      target: runtime-dev
+    container_name: threads-dev-celery
+    command: python -m celery -A core worker --loglevel=INFO --concurrency=2
+    volumes:
+      - .:/app
+    env_file:
+      - conf/dev/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+  celery-beat:
+    build:
+      context: .
+      target: runtime-dev
+    container_name: threads-dev-celery-beat
+    command: celery -A core beat --loglevel=INFO
+    volumes:
+      - .:/app
+    env_file:
+      - conf/dev/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+volumes:  
+  postgres_data:
+  redis_data:
