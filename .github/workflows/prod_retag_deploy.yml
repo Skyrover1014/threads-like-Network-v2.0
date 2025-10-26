@@ -1,0 +1,60 @@
+name: (Deployment) retag approved dev images and push to prod environment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Ensure APPROVED_DEV_TAG exists
+        run: |
+          if [ -z "${{ vars.APPROVED_DEV_TAG }}" ]; then
+            echo "APPROVED_DEV_TAG is not set on the prod environment. Run the promotion workflow first." >&2
+            exit 1
+          fi
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ap-southeast-2 | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-2.amazonaws.com
+      - name: Pull approved dev images
+        env:
+          ECR_REPO: ${{ secrets.ECR_REPO_URL }}
+          APPROVED_DEV_TAG: ${{ vars.APPROVED_DEV_TAG }}
+        run: |
+          for service in web celery celery-beat nginx; do
+            docker pull "${ECR_REPO}:${service}-${APPROVED_DEV_TAG}"
+          done
+      - name: Calculate release tag
+        id: release_tag
+        run: |
+          release_date=$(date -u +%Y%m%d)
+          seq=$(printf "%03d" "${GITHUB_RUN_NUMBER}")
+          echo "value=${release_date}-${seq}" >> "$GITHUB_OUTPUT"
+      - name: Retag images for prod
+        env:
+          ECR_REPO: ${{ secrets.ECR_REPO_URL }}
+          APPROVED_DEV_TAG: ${{ vars.APPROVED_DEV_TAG }}
+          RELEASE_TAG: ${{ steps.release_tag.outputs.value }}
+        run: |
+          for service in web celery celery-beat nginx; do
+            docker tag "${ECR_REPO}:${service}-${APPROVED_DEV_TAG}" "${ECR_REPO}:${service}-${RELEASE_TAG}"
+          done
+      - name: Push prod tags
+        env:
+          ECR_REPO: ${{ secrets.ECR_REPO_URL }}
+          RELEASE_TAG: ${{ steps.release_tag.outputs.value }}
+        run: |
+          for service in web celery celery-beat nginx; do
+            docker push "${ECR_REPO}:${service}-${RELEASE_TAG}"
+          done

@@ -1,12 +1,12 @@
-name: CI/CD dev smoke test
+name: (Test) perform smoke test in dev environment and push images to ECR
 
 on:
   push:
     branches: [dev]
 
-permissions:
-  contents: read
-  actions: write
+# permissions:
+#   contents: read
+#   actions: write
 
 jobs:
   dev:

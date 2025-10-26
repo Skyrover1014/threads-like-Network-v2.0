@@ -1,4 +1,4 @@
-name: Promote Approved Dev Image
+name: (Deployment) promote approved dev image to prod environment
 
 on:
   workflow_dispatch:

@@ -1,9 +1,15 @@
-name: CI test
+name: (Development) feature branch perform unit test
 
 on:
   push:
     branches: 
         - 'ci-*'
+        - 'feature-*'
+        - 'fix-*'
+        - 'refactor-*'
+        - 'test-*'
+        - 'chore-*'
+        - 'build-*'
 
 jobs:
   test:
