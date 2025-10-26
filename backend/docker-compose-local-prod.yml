@@ -34,7 +34,8 @@ services:
     image: web-prod:${LOCAL_PROD_IMAGE_TAG}
     container_name: threads-prod-init-static
     command: python manage.py collectstatic --noinput
-    env_file: conf/prod/.env
+    env_file: 
+      - conf/prod/.env
     volumes: 
       - static_volume:/app/staticfiles
     networks:

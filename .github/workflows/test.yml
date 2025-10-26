@@ -51,7 +51,7 @@ jobs:
           CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
           REDIS_URL=${REDIS_URL}
           EOF
-
+          
           mkdir -p backend/conf/test
           cat <<EOF > backend/conf/test/.env
           POSTGRES_DB=${POSTGRES_DB}

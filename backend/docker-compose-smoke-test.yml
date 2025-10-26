@@ -1,10 +1,8 @@
 services:
   db:
     image: postgres:15
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - conf/dev/.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -23,7 +21,8 @@ services:
   init-static:
     image: web:${TAG}
     command: python manage.py collectstatic --noinput
-    env_file: .env
+    env_file:
+      - .env
     volumes: 
       - static_volume:/app/staticfiles
     depends_on: 
@@ -32,7 +31,8 @@ services:
 
   web:  
     image: web:${TAG}  
-    env_file: .env
+    env_file: 
+      - .env
     depends_on:
       init-static:
         condition: service_completed_successfully
@@ -75,7 +75,7 @@ services:
   nginx:
     image: nginx:${TAG}
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8081:80"
     volumes:
       - static_volume:/app/staticfiles:ro 
     depends_on:
