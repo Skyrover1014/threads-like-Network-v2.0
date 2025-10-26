@@ -21,8 +21,6 @@ WORKDIR $PYSETUP_PATH
 COPY pyproject.toml poetry.lock* ./
 
 
-
-
 # ---------- builder: dev ----------
 FROM builder-base AS builder-dev
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
@@ -31,13 +29,13 @@ RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
 FROM base AS runtime-dev
 ENV DJANGO_SETTINGS_MODULE=core.settings
 COPY --from=builder-dev $VENV_PATH $VENV_PATH
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 COPY manage.py /app/
 COPY core /app/core
 COPY threads /app/threads
 WORKDIR /app
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
 
 # ---------- builder: test ----------
 FROM builder-base AS builder-test
@@ -56,14 +54,10 @@ COPY tests /app/tests
 WORKDIR /app
 EXPOSE 8000
 
-
-
 # ---------- builder: deployment  ----------
 FROM builder-base AS builder-deployment
 RUN --mount=type=cache,target=$POETRY_HOME/pypoetry/cache \
     poetry install --no-dev
-
-
 # ---------- runtime: web ----------
 FROM base AS runtime-web
 ENV DJANGO_SETTINGS_MODULE=core.settings

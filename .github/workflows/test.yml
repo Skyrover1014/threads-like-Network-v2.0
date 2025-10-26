@@ -1,8 +1,6 @@
 name: CI test
 
 on:
-  pull_request:
-    branches: [ "main", "dev" ]
   push:
     branches: 
         - 'ci-*'
@@ -38,29 +36,32 @@ jobs:
           CELERY_RESULT_BACKEND: ${{ vars.CELERY_RESULT_BACKEND}}
           REDIS_URL: ${{ vars.REDIS_URL}}
 
-
-
         run: |
-          echo "ENV=${ENV}" >> backend/.env
-          echo "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" >> backend/.env
-          echo "DATABASE_NAME=${DATABASE_NAME}" >> backend/.env
-          echo "DATABASE_USER=${DATABASE_USER}" >> backend/.env
-          echo "DATABASE_PASSWORD=${DATABASE_PASSWORD}" >> backend/.env
-          echo "DATABASE_HOST=${DATABASE_HOST}" >> backend/.env
-          echo "DATABASE_PORT=${DATABASE_PORT}" >> backend/.env
-          echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> backend/.env
-          echo "SERPAPI_API_KEY=${SERPAPI_API_KEY}" >> backend/.env
-          echo "POSTGRES_DB=${POSTGRES_DB}" >> backend/.env
-          echo "POSTGRES_USER=${POSTGRES_USER}" >> backend/.env
-          echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> backend/.env
-          echo "CELERY_BROKER_URL=${CELERY_BROKER_URL}" >> backend/.env
-          echo "CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}" >> backend/.env
-          echo "REDIS_URL=${REDIS_URL}" >> backend/.env
-
+          cat <<EOF > backend/.env
+          ENV=${ENV}
+          DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+          DATABASE_NAME=${DATABASE_NAME}
+          DATABASE_USER=${DATABASE_USER}
+          DATABASE_PASSWORD=${DATABASE_PASSWORD}
+          DATABASE_HOST=${DATABASE_HOST}
+          DATABASE_PORT=${DATABASE_PORT}
+          OPENAI_API_KEY=${OPENAI_API_KEY}
+          SERPAPI_API_KEY=${SERPAPI_API_KEY}
+          CELERY_BROKER_URL=${CELERY_BROKER_URL}
+          CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+          REDIS_URL=${REDIS_URL}
+          EOF
+          
+          mkdir -p backend/conf/test
+          cat <<EOF > backend/conf/test/.env
+          POSTGRES_DB=${POSTGRES_DB}
+          POSTGRES_USER=${POSTGRES_USER}
+          POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+          EOF
 
       - name: Run tests
         run: |
-          docker compose -f docker-compose-test.yml up --build --abort-on-container-exit --exit-code-from web-test
+          docker compose -f docker-compose-test.yml up --build --abort-on-container-exit --exit-code-from web
         working-directory: ./backend
 
       - name: Tear down
