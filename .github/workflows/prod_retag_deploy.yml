@@ -58,3 +58,13 @@ jobs:
           for service in web celery celery-beat nginx; do
             docker push "${ECR_REPO}:${service}-${RELEASE_TAG}"
           done
+      - name: Cleanup dev tags
+        env:
+          ECR_REPO: ${{ secrets.ECR_REPO_URL }}
+          APPROVED_DEV_TAG: ${{ vars.APPROVED_DEV_TAG }}
+        run: |
+          for service in web celery celery-beat nginx; do
+            aws ecr batch-delete-image \
+              --repository-name "${ECR_REPO}" \
+              --image-ids imageTag="${service}-${APPROVED_DEV_TAG}" || true
+          done
