@@ -1,5 +1,5 @@
 services:
-  db-test:
+  db:
     image: postgres:15
     env_file: conf/test/.env
     ports: 
@@ -11,7 +11,7 @@ services:
       start_period: 20s
       retries: 5
   
-  redis-test:
+  redis:
     image: redis:7
     ports: 
       - "6379:6379"
@@ -22,7 +22,7 @@ services:
       start_period: 10s
       retries: 3
 
-  celery-test:
+  celery:
     build:
       context: .
       target: runtime-test
@@ -31,9 +31,9 @@ services:
       - .:/app
     env_file: .env
     depends_on:
-      redis-test:
+      redis:
         condition: service_healthy
-      db-test:
+      db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
@@ -51,20 +51,20 @@ services:
       - .:/app
     env_file: .env
     depends_on:
-      redis-test:
+      redis:
         condition: service_healthy
-      db-test:
+      db:
         condition: service_healthy
-  web-test:  # test
+  web:  # test
     build:
       context: .
       target: runtime-test
     command: pytest -v --maxfail=1 --disable-warnings
     env_file: .env
     depends_on:
-      db-test:
+      db:
         condition: service_healthy
-      redis-test:
+      redis:
         condition: service_healthy
-      celery-test:
+      celery:
         condition: service_healthy

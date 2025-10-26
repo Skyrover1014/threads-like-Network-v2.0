@@ -1,7 +1,7 @@
 name: threads-prod
 
 services:
-  db-prod:
+  db:
     image: postgres:15
     container_name: threads-prod-db
     volumes:
@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 5
   
-  redis-prod:
+  redis:
     image: redis:7
     container_name: threads-prod-redis
     volumes:
@@ -40,7 +40,7 @@ services:
       - static_volume:/app/staticfiles
     networks:
       - threads-backend-prod
-  web-prod:  
+  web:  
     image: web-prod:${LOCAL_PROD_IMAGE_TAG}
     container_name: threads-prod-web
     env_file: conf/prod/.env
@@ -49,9 +49,9 @@ services:
     depends_on:
       init-static:
         condition: service_completed_successfully
-      db-prod:
+      db:
         condition: service_healthy
-      redis-prod:
+      redis:
         condition: service_healthy
     networks:
       - threads-backend-prod
@@ -63,15 +63,15 @@ services:
       retries: 5
       start_period: 20s
 
-  celery-prod:
+  celery:
     image: celery-prod:${LOCAL_PROD_IMAGE_TAG}
     container_name: threads-prod-celery
     env_file:
       - conf/prod/.env
     depends_on:
-      redis-prod:
+      redis:
         condition: service_healthy
-      db-prod:
+      db:
         condition: service_healthy
     networks:
       - threads-backend-prod
@@ -82,19 +82,19 @@ services:
       start_period: 10s
       retries: 3
 
-  celery-beat-prod:
+  celery-beat:
     image: celery-beat-prod:${LOCAL_PROD_IMAGE_TAG}
     container_name: threads-prod-celery-beat
     env_file:
       - conf/prod/.env
     depends_on:
-      redis-prod:
+      redis:
         condition: service_healthy
-      db-prod:
+      db:
         condition: service_healthy
     networks:
       - threads-backend-prod
-  nginx-prod:
+  nginx:
     image: nginx-prod:${LOCAL_PROD_IMAGE_TAG}
     container_name: threads-prod-nginx
     ports:
@@ -102,7 +102,7 @@ services:
     volumes:
       - static_volume:/app/staticfiles:ro 
     depends_on:
-      web-prod:
+      web:
         condition: service_healthy
     networks:
       - threads-frontend-prod

@@ -1,7 +1,7 @@
 name: threads-dev
 
 services:
-  db-dev:
+  db:
     image: postgres:15
     container_name: threads-dev-db
     volumes:
@@ -15,7 +15,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-  redis-dev:
+  redis:
     image: redis:7
     container_name: threads-dev-redis
     volumes:
@@ -29,7 +29,7 @@ services:
       start_period: 10s
       retries: 3
 
-  web-dev:  # dev
+  web:  # dev
     build:
       context: .
       target: runtime-dev
@@ -41,11 +41,11 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      db-dev:
+      db:
         condition: service_healthy
-      redis-dev:
+      redis:
         condition: service_healthy
-  celery-dev:
+  celery:
     build:
       context: .
       target: runtime-dev
@@ -56,11 +56,11 @@ services:
     env_file:
       - conf/dev/.env
     depends_on:
-      redis-dev:
+      redis:
         condition: service_healthy
-      db-dev:
+      db:
         condition: service_healthy
-  celery-beat-dev:
+  celery-beat:
     build:
       context: .
       target: runtime-dev
@@ -71,10 +71,10 @@ services:
     env_file:
       - conf/dev/.env
     depends_on:
-      redis-dev:
+      redis:
         condition: service_healthy
-      db-dev:
+      db:
         condition: service_healthy
-volumes:
+volumes:  
   postgres_data:
   redis_data:
