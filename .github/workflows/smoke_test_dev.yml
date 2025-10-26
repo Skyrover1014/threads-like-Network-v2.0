@@ -77,11 +77,11 @@ jobs:
         run: |
           docker build -t nginx:${TAG} .
       
-      - name: Smoke up compose
+      - name: Docker compose up container and perform health check in the each contianer
         working-directory: ./backend
         run: |
           TAG=${TAG} docker compose -f docker-compose-smoke-test.yml up -d --wait
-          curl -fsS http://127.0.0.1:8080/healthz
+          
       
       - name: Dump nginx effective config
         working-directory: ./backend
@@ -90,6 +90,7 @@ jobs:
       - name: Run smoke tests
         working-directory: ./backend
         run: |
+           curl -fsS http://127.0.0.1:8080/healthz
            curl -fsSI http://127.0.0.1:8080/static/admin/css/base.css
   
       - name: Tear down

@@ -19,6 +19,7 @@ __pycache__/
 .env*
 .env.*  # 支援 .env.development、.env.production
 .env.prod
+conf/
 
 # Test/coverage
 htmlcov/

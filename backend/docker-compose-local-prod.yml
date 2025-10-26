@@ -1,0 +1,123 @@
+name: threads-prod
+
+services:
+  db-prod:
+    image: postgres:15
+    container_name: threads-prod-db
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    env_file:
+      - conf/prod/.env
+    networks:
+      - threads-backend-prod
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  redis-prod:
+    image: redis:7
+    container_name: threads-prod-redis
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - threads-backend-prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    
+  init-static:
+    image: web-prod:${LOCAL_PROD_IMAGE_TAG}
+    container_name: threads-prod-init-static
+    command: python manage.py collectstatic --noinput
+    env_file: conf/prod/.env
+    volumes: 
+      - static_volume:/app/staticfiles
+    networks:
+      - threads-backend-prod
+  web-prod:  
+    image: web-prod:${LOCAL_PROD_IMAGE_TAG}
+    container_name: threads-prod-web
+    env_file: conf/prod/.env
+    volumes:
+      - static_volume:/app/staticfiles
+    depends_on:
+      init-static:
+        condition: service_completed_successfully
+      db-prod:
+        condition: service_healthy
+      redis-prod:
+        condition: service_healthy
+    networks:
+      - threads-backend-prod
+      - threads-frontend-prod
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  celery-prod:
+    image: celery-prod:${LOCAL_PROD_IMAGE_TAG}
+    container_name: threads-prod-celery
+    env_file:
+      - conf/prod/.env
+    depends_on:
+      redis-prod:
+        condition: service_healthy
+      db-prod:
+        condition: service_healthy
+    networks:
+      - threads-backend-prod
+    healthcheck:
+      test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  celery-beat-prod:
+    image: celery-beat-prod:${LOCAL_PROD_IMAGE_TAG}
+    container_name: threads-prod-celery-beat
+    env_file:
+      - conf/prod/.env
+    depends_on:
+      redis-prod:
+        condition: service_healthy
+      db-prod:
+        condition: service_healthy
+    networks:
+      - threads-backend-prod
+  nginx-prod:
+    image: nginx-prod:${LOCAL_PROD_IMAGE_TAG}
+    container_name: threads-prod-nginx
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - static_volume:/app/staticfiles:ro 
+    depends_on:
+      web-prod:
+        condition: service_healthy
+    networks:
+      - threads-frontend-prod
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  static_volume:
+  postgres_data_prod:
+  redis_data_prod:
+
+networks:
+  threads-frontend-prod:
+    driver: bridge
+  threads-backend-prod:
+    driver: bridge
