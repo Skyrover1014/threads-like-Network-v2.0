@@ -1,0 +1,57 @@
+name: Promote Approved Dev Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Commit SHA or image tag to approve for prod deploy (e.g. 2f1234d)"
+        required: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Update prod APPROVED_DEV_TAG
+        uses: actions/github-script@v7
+        env:
+          TARGET_ENVIRONMENT: prod
+          APPROVED_DEV_TAG: ${{ inputs.image_tag }}
+        with:
+          script: |
+            const environmentName = process.env.TARGET_ENVIRONMENT;
+            const variableName = 'APPROVED_DEV_TAG';
+            const value = process.env.APPROVED_DEV_TAG;
+            const { owner, repo } = context.repo;
+
+            if (!value) {
+              core.setFailed('APPROVED_DEV_TAG value is required');
+            }
+
+            try {
+              await github.request('PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}', {
+                owner,
+                repo,
+                environment_name: environmentName,
+                name: variableName,
+                value,
+              });
+              core.info(`Updated ${variableName} for ${environmentName} to ${value}`);
+            } catch (error) {
+              if (error.status === 404) {
+                await github.request('POST /repos/{owner}/{repo}/environments/{environment_name}/variables', {
+                  owner,
+                  repo,
+                  environment_name: environmentName,
+                  name: variableName,
+                  value,
+                });
+                core.info(`Created ${variableName} for ${environmentName} with value ${value}`);
+              } else {
+                core.setFailed(`Failed to update ${variableName}: ${error.message}`);
+              }
+            }
