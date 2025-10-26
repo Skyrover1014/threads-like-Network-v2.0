@@ -15,24 +15,11 @@ print(f"DEBUG: {DEBUG}")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-ALLOWED_HOSTS = [
-    "3.26.225.207",
-    "localhost",
-    "localhost:8080",
-    "localhost:8081",
-    "127.0.0.1",
-    "127.0.0.1:8080",
-    "127.0.0.1:8081",
-    "0.0.0.0",
-    "0.0.0.0:8000",
-]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8081,http://127.0.0.1:8081,http://0.0.0.0:8081").split(",")
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8080",
-    "http://localhost:8081",
-    "http://127.0.0.1:8080",
-    "http://127.0.0.1:8081",
-    "http://0.0.0.0:8000",
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173", 
 ]
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
@@ -86,9 +73,6 @@ if DEBUG:
   INSTALLED_APPS.append('drf_spectacular')
   MIDDLEWARE.insert(0, 'silk.middleware.SilkyMiddleware')
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", 
-]
 
 ROOT_URLCONF = 'core.urls'
 
