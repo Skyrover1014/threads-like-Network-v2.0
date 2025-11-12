@@ -1,73 +1,128 @@
+name: threads-deploy
+
 services:
-  db-prod:
+  db:
     image: postgres:15
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    container_name: threads-deploy-db
+    volumes:
+      - postgres_data_deploy:/var/lib/postgresql/data
+    env_file:
+      - conf/deploy/.env
+    networks:
+      - threads-backend-deploy
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
-    restart: always
-  redis-prod:
+
+  redis:
     image: redis:7
-    ports:
-      - "6379:6379"
+    container_name: threads-deploy-redis
+    volumes:
+      - redis_data_deploy:/data
+    networks:
+      - threads-backend-deploy
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       start_period: 10s
       retries: 3
-  celery-prod:
-    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:celery-v1.0.0
-    command: python -m celery -A core worker --loglevel=info --concurrency=2
+
+  init-static:
+    image: ${ECR_REPO_URL}:web-${IMAGE_TAG}
+    container_name: threads-deploy-init-static
+    command: python manage.py collectstatic --noinput
     env_file:
-      - .env
+      - conf/deploy/.env
+    volumes: 
+      - static_volume:/app/staticfiles
+    networks:
+      - threads-backend-deploy
+
+  web:
+    image: ${ECR_REPO_URL}:web-${IMAGE_TAG}
+    container_name: threads-deploy-web
+    env_file:
+      - conf/deploy/.env
+    volumes:
+      - static_volume:/app/staticfiles
     depends_on:
-      redis-prod:
+      init-static:
+        condition: service_completed_successfully
+      db:
         condition: service_healthy
-      db-prod:
+      redis:
         condition: service_healthy
+    networks:
+      - threads-backend-deploy
+      - threads-frontend-deploy
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  celery:
+    image: ${ECR_REPO_URL}:celery-${IMAGE_TAG}
+    container_name: threads-deploy-celery
+    env_file:
+      - conf/deploy/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - threads-backend-deploy
     healthcheck:
       test: ["CMD", "celery", "-A", "core", "inspect", "ping"]
       interval: 15s
       timeout: 5s
       start_period: 10s
       retries: 3
-  web-prod:
-    image: 532451361669.dkr.ecr.ap-southeast-2.amazonaws.com/threads-backend:v2.0.0
-    command: >
-      sh -c "python manage.py collectstatic --noinput --settings=core.settings &&
-        gunicorn core.wsgi:application --bind 0.0.0.0:8000"
-    env_file: .env
-    ports:
-      - "8000:8000"
-    volumes:
-      - static_volume:/app/staticfiles
-    depends_on:
-      db-prod:
-        condition: service_healthy
-      redis-prod:
-        condition: service_healthy
-      celery-prod:
-        condition: service_healthy
 
-  nginx-prod:
-    image: nginx:latest
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - static_volume:/app/staticfiles
+  celery-beat:
+    image: ${ECR_REPO_URL}:celery-beat-${IMAGE_TAG}
+    container_name: threads-deploy-celery-beat
+    env_file:
+      - conf/deploy/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - threads-backend-deploy
+  
+  nginx:
+    image: ${ECR_REPO_URL}:nginx-${IMAGE_TAG}
+    container_name: threads-deploy-nginx
     ports:
       - "80:80"
+    volumes:
+      - static_volume:/app/staticfiles:ro
     depends_on:
-      - web-prod
+      web:
+        condition: service_healthy
+    networks:
+      - threads-frontend-deploy
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
 
 volumes:
-  postgres_data_prod:
   static_volume:
+  postgres_data_deploy:
+  redis_data_deploy:
+
+networks:
+  threads-frontend-deploy:
+    driver: bridge
+  threads-backend-deploy:
+    driver: bridge
