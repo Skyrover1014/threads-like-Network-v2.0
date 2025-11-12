@@ -2,6 +2,11 @@
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { isAxiosError } from "axios";
+type RegisterErrorResponse = {
+    error?: string | { message?: string };
+    message?: string;
+};
 const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
@@ -17,9 +22,16 @@ const RegisterPage: React.FC = () => {
             if (response.status === 201) {
                 navigate("/");
             }
-        } catch (error: any) {
-            if (error.response && error.response.data) {
-                setError(error.response.data.error);
+        } catch (error: unknown) {
+            if (isAxiosError<RegisterErrorResponse>(error)) {
+                const data = error.response?.data;
+                const messageFromErrorObject = typeof data?.error === "object" && data.error?.message;
+                const message = typeof data?.error === "string"
+                    ? data.error
+                    : typeof messageFromErrorObject === "string"
+                        ? messageFromErrorObject
+                        : data?.message;
+                setError(message ?? "Registration failed. Please try again.");
             } else {
                 setError("Registration failed. Please try again.");
             }
